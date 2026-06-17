@@ -1024,50 +1024,75 @@ window.speechSynthesis.onvoiceschanged = () => {
 // 初始加载（部分浏览器同步返回）
 americanVoice = loadAmericanVoice();
 
+// ==================== TTS 引擎检测 ====================
+let ttsAvailable = false;
+let ttsAudio = null;
+
+// 检测 SpeechSynthesis 是否可用
+function checkTTS() {
+  if (typeof speechSynthesis !== 'undefined' && speechSynthesis.getVoices) {
+    // 尝试获取 voices 确认引擎正常
+    const voices = speechSynthesis.getVoices();
+    if (voices.length > 0) {
+      ttsAvailable = true;
+      return;
+    }
+    // 有些浏览器异步加载 voices
+    speechSynthesis.onvoiceschanged = () => {
+      if (speechSynthesis.getVoices().length > 0) {
+        ttsAvailable = true;
+      }
+    };
+  }
+}
+checkTTS();
+
 function speakWord() {
   if (wordQueue.length === 0) return;
-
-  // Android Chrome SpeechSynthesis bug workaround: cancel + resume
-  window.speechSynthesis.cancel();
-
   const wordIdx = wordQueue[currentIndex];
   const word = VOCAB[wordIdx].w;
 
-  const utterance = new SpeechSynthesisUtterance(word);
-  const voice = ensureAmericanVoice();
-  if (voice) utterance.voice = voice;
-  utterance.lang = 'en-US';
-  utterance.rate = 0.9;
-  utterance.pitch = 1;
-  utterance.volume = 1;
-
   const btn = document.getElementById('audio-btn');
-  if (btn) btn.classList.add('playing');
-  isSpeaking = true;
 
-  // Android Chrome 有时不触发 onend，用超时兜底
-  let settled = false;
-  const done = () => {
-    if (settled) return;
-    settled = true;
-    if (btn) btn.classList.remove('playing');
-    isSpeaking = false;
-  };
+  if (ttsAvailable) {
+    // 原生 SpeechSynthesis（Chrome/Firefox/Safari）
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(word);
+    const voice = ensureAmericanVoice();
+    if (voice) utterance.voice = voice;
+    utterance.lang = 'en-US';
+    utterance.rate = 0.9;
+    utterance.pitch = 1;
+    utterance.volume = 1;
 
-  utterance.onend = done;
-  utterance.onerror = done;
+    if (btn) btn.classList.add('playing');
+    isSpeaking = true;
 
-  // 兜底超时（粗略估算：每秒约 3 个音节）
-  setTimeout(done, Math.max(800, word.length * 300));
-
-  window.speechSynthesis.speak(utterance);
-
-  // Android Chrome 有时 speak 后立即 pause，需要 resume
-  setTimeout(() => {
-    if (window.speechSynthesis.paused) {
-      window.speechSynthesis.resume();
-    }
-  }, 50);
+    let settled = false;
+    const done = () => {
+      if (settled) return;
+      settled = true;
+      if (btn) btn.classList.remove('playing');
+      isSpeaking = false;
+    };
+    utterance.onend = done;
+    utterance.onerror = done;
+    setTimeout(done, Math.max(800, word.length * 300));
+    window.speechSynthesis.speak(utterance);
+    setTimeout(() => {
+      if (window.speechSynthesis.paused) window.speechSynthesis.resume();
+    }, 50);
+  } else {
+    // 备用方案：Google Translate TTS（UC/国产浏览器兼容）
+    if (btn) btn.classList.add('playing');
+    const url = 'https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=' + encodeURIComponent(word);
+    if (ttsAudio) { ttsAudio.pause(); ttsAudio = null; }
+    ttsAudio = new Audio(url);
+    ttsAudio.onended = () => { if (btn) btn.classList.remove('playing'); ttsAudio = null; };
+    ttsAudio.onerror = () => { if (btn) btn.classList.remove('playing'); ttsAudio = null; };
+    ttsAudio.play().catch(() => { if (btn) btn.classList.remove('playing'); });
+    setTimeout(() => { if (btn) btn.classList.remove('playing'); }, 3000);
+  }
 }
 
 // ==================== 卡片翻转 ====================
@@ -1144,18 +1169,22 @@ function renderReviewList() {
 }
 
 function speakReviewWord(idx) {
-  window.speechSynthesis.cancel();
   const word = VOCAB[idx].w;
-  const utterance = new SpeechSynthesisUtterance(word);
-  const voice = ensureAmericanVoice();
-  if (voice) utterance.voice = voice;
-  utterance.lang = 'en-US';
-  utterance.rate = 0.9;
-  utterance.volume = 1;
-  setTimeout(() => {
-    if (window.speechSynthesis.paused) window.speechSynthesis.resume();
-  }, 50);
-  window.speechSynthesis.speak(utterance);
+  if (ttsAvailable) {
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(word);
+    const voice = ensureAmericanVoice();
+    if (voice) utterance.voice = voice;
+    utterance.lang = 'en-US';
+    utterance.rate = 0.9;
+    utterance.volume = 1;
+    setTimeout(() => { if (window.speechSynthesis.paused) window.speechSynthesis.resume(); }, 50);
+    window.speechSynthesis.speak(utterance);
+  } else {
+    if (ttsAudio) { ttsAudio.pause(); ttsAudio = null; }
+    ttsAudio = new Audio('https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=' + encodeURIComponent(word));
+    ttsAudio.play().catch(() => {});
+  }
 }
 
 function reviewWord(idx) {
@@ -1204,17 +1233,21 @@ function renderWordList() {
 }
 
 function speakWordFromList(idx) {
-  window.speechSynthesis.cancel();
   const word = VOCAB[idx].w;
-  const utterance = new SpeechSynthesisUtterance(word);
-  const voice = ensureAmericanVoice();
-  if (voice) utterance.voice = voice;
-  utterance.lang = 'en-US';
-  utterance.rate = 0.9;
-  setTimeout(() => {
-    if (window.speechSynthesis.paused) window.speechSynthesis.resume();
-  }, 50);
-  window.speechSynthesis.speak(utterance);
+  if (ttsAvailable) {
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(word);
+    const voice = ensureAmericanVoice();
+    if (voice) utterance.voice = voice;
+    utterance.lang = 'en-US';
+    utterance.rate = 0.9;
+    setTimeout(() => { if (window.speechSynthesis.paused) window.speechSynthesis.resume(); }, 50);
+    window.speechSynthesis.speak(utterance);
+  } else {
+    if (ttsAudio) { ttsAudio.pause(); ttsAudio = null; }
+    ttsAudio = new Audio('https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=' + encodeURIComponent(word));
+    ttsAudio.play().catch(() => {});
+  }
 }
 
 function openWordFromList(idx) {
