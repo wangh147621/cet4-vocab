@@ -2,8 +2,9 @@
 const CACHE_NAME = 'cet4-vocab-v2';
 const ASSETS = [
   './',
-  './cet4-vocab.html',
+  './index.html',
   './manifest.json',
+  './icon.svg',
 ];
 
 // 安装：预缓存核心文件
@@ -45,7 +46,7 @@ self.addEventListener('fetch', event => {
       }).catch(() => {
         // 网络不可用且无缓存时，返回 HTML 本身
         if (event.request.mode === 'navigate') {
-          return caches.match('./cet4-vocab.html');
+          return caches.match('./index.html');
         }
         return new Response('Offline', { status: 503 });
       });
