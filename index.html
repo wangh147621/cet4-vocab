@@ -296,7 +296,7 @@
           <div class="pos-tag" id="pos-el">v.</div>
           <div class="meaning" id="meaning-el">放弃，抛弃</div>
           <button class="audio-btn" id="audio-btn" onclick="speakWord()" title="点击发音">🔊</button>
-          <div style="font-size:11px;color:var(--muted);margin-top:6px;">点击卡片翻转查看例句</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:6px;">👆 点喇叭发音 · 点卡片看例句</div>
         </div>
         <div class="card-face card-back" id="card-back">
           <div class="word" id="word-el-back">abandon</div>
@@ -950,8 +950,11 @@ function updateCard() {
   isFlipped = false;
   updateStats();
 
-  // 自动发音
-  setTimeout(() => speakWord(), 300);
+  // 移动端需要用户手势才能发音，不自动读
+  // 首次点击页面任意位置激活语音引擎
+  if (!window._speechReady) {
+    window._speechReady = false;
+  }
 }
 
 function updateStats() {
@@ -1023,9 +1026,10 @@ americanVoice = loadAmericanVoice();
 
 function speakWord() {
   if (wordQueue.length === 0) return;
-  if (isSpeaking) {
-    window.speechSynthesis.cancel();
-  }
+
+  // Android Chrome SpeechSynthesis bug workaround: cancel + resume
+  window.speechSynthesis.cancel();
+
   const wordIdx = wordQueue[currentIndex];
   const word = VOCAB[wordIdx].w;
 
@@ -1038,19 +1042,32 @@ function speakWord() {
   utterance.volume = 1;
 
   const btn = document.getElementById('audio-btn');
-  btn.classList.add('playing');
+  if (btn) btn.classList.add('playing');
   isSpeaking = true;
 
-  utterance.onend = () => {
-    btn.classList.remove('playing');
-    isSpeaking = false;
-  };
-  utterance.onerror = () => {
-    btn.classList.remove('playing');
+  // Android Chrome 有时不触发 onend，用超时兜底
+  let settled = false;
+  const done = () => {
+    if (settled) return;
+    settled = true;
+    if (btn) btn.classList.remove('playing');
     isSpeaking = false;
   };
 
+  utterance.onend = done;
+  utterance.onerror = done;
+
+  // 兜底超时（粗略估算：每秒约 3 个音节）
+  setTimeout(done, Math.max(800, word.length * 300));
+
   window.speechSynthesis.speak(utterance);
+
+  // Android Chrome 有时 speak 后立即 pause，需要 resume
+  setTimeout(() => {
+    if (window.speechSynthesis.paused) {
+      window.speechSynthesis.resume();
+    }
+  }, 50);
 }
 
 // ==================== 卡片翻转 ====================
@@ -1127,6 +1144,7 @@ function renderReviewList() {
 }
 
 function speakReviewWord(idx) {
+  window.speechSynthesis.cancel();
   const word = VOCAB[idx].w;
   const utterance = new SpeechSynthesisUtterance(word);
   const voice = ensureAmericanVoice();
@@ -1134,7 +1152,9 @@ function speakReviewWord(idx) {
   utterance.lang = 'en-US';
   utterance.rate = 0.9;
   utterance.volume = 1;
-  window.speechSynthesis.cancel();
+  setTimeout(() => {
+    if (window.speechSynthesis.paused) window.speechSynthesis.resume();
+  }, 50);
   window.speechSynthesis.speak(utterance);
 }
 
@@ -1184,13 +1204,16 @@ function renderWordList() {
 }
 
 function speakWordFromList(idx) {
+  window.speechSynthesis.cancel();
   const word = VOCAB[idx].w;
   const utterance = new SpeechSynthesisUtterance(word);
   const voice = ensureAmericanVoice();
   if (voice) utterance.voice = voice;
   utterance.lang = 'en-US';
   utterance.rate = 0.9;
-  window.speechSynthesis.cancel();
+  setTimeout(() => {
+    if (window.speechSynthesis.paused) window.speechSynthesis.resume();
+  }, 50);
   window.speechSynthesis.speak(utterance);
 }
 
@@ -1236,24 +1259,39 @@ if ('serviceWorker' in navigator) {
 
 // 监听 beforeinstallprompt（Chrome 自动提示安装）
 let deferredPrompt = null;
+let installTipShown = false;
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   deferredPrompt = e;
-  // 显示安装按钮
   const btn = document.getElementById('install-btn');
   if (btn) btn.style.display = 'inline-block';
 });
 
+// 页面加载后 3 秒如果还没触发 beforeinstallprompt，显示菜单安装提示
+setTimeout(() => {
+  if (!deferredPrompt && !installTipShown && !window.matchMedia('(display-mode: standalone)').matches) {
+    installTipShown = true;
+    const tip = document.createElement('div');
+    tip.id = 'install-tip';
+    tip.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(108,140,255,0.95);color:#fff;padding:12px 20px;border-radius:12px;font-size:13px;z-index:999;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,0.4);cursor:pointer;max-width:90%;';
+    tip.innerHTML = '📲 点右上角菜单 → <b>安装应用</b><br><span style="font-size:11px;opacity:0.8;">添加到桌面，离线也能用</span>';
+    tip.onclick = () => tip.remove();
+    document.body.appendChild(tip);
+    setTimeout(() => { if (tip.parentNode) tip.remove(); }, 8000);
+  }
+}, 4000);
+
 // 手动安装
 function installApp() {
   if (!deferredPrompt) {
-    alert('安装功能暂不可用，请尝试浏览器菜单中的「添加到主屏幕」');
+    alert('请点右上角菜单 → 「安装应用」或「添加到主屏幕」');
     return;
   }
   deferredPrompt.prompt();
   deferredPrompt.userChoice.then(result => {
     if (result.outcome === 'accepted') {
-      document.getElementById('install-btn').style.display = 'none';
+      const btn = document.getElementById('install-btn');
+      if (btn) btn.style.display = 'none';
     }
     deferredPrompt = null;
   });
