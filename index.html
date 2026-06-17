@@ -269,10 +269,13 @@
 <div id="app">
   <header>
     <h1>📖 CET-4</h1>
-    <div class="tab-switch">
-      <button onclick="switchTab('learn')" id="tab-learn" class="active">学习</button>
-      <button onclick="switchTab('review')" id="tab-review">复习</button>
-      <button onclick="switchTab('list')" id="tab-list">单词表</button>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button id="install-btn" style="display:none;background:rgba(108,140,255,0.15);color:var(--accent);border:1px solid rgba(108,140,255,0.3);padding:5px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;" onclick="installApp()">📲 安装</button>
+      <div class="tab-switch">
+        <button onclick="switchTab('learn')" id="tab-learn" class="active">学习</button>
+        <button onclick="switchTab('review')" id="tab-review">复习</button>
+        <button onclick="switchTab('list')" id="tab-list">单词表</button>
+      </div>
     </div>
   </header>
 
@@ -1236,7 +1239,25 @@ let deferredPrompt = null;
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   deferredPrompt = e;
+  // 显示安装按钮
+  const btn = document.getElementById('install-btn');
+  if (btn) btn.style.display = 'inline-block';
 });
+
+// 手动安装
+function installApp() {
+  if (!deferredPrompt) {
+    alert('安装功能暂不可用，请尝试浏览器菜单中的「添加到主屏幕」');
+    return;
+  }
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(result => {
+    if (result.outcome === 'accepted') {
+      document.getElementById('install-btn').style.display = 'none';
+    }
+    deferredPrompt = null;
+  });
+}
 
 initLearn();
 </script>
