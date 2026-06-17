@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>四级词汇 · CET4 Vocab</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f0f1a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="CET-4">
+<style>
+  :root {
+    --bg: #0f0f1a;
+    --card-bg: #1a1a2e;
+    --text: #e0e0e8;
+    --accent: #6c8cff;
+    --accent2: #ff6b8a;
+    --green: #4ade80;
+    --yellow: #facc15;
+    --muted: #707088;
+    --border: rgba(255,255,255,0.06);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, 'SF Pro Display', 'PingFang SC', 'Noto Sans SC', sans-serif;
+    display: flex; justify-content: center; align-items: center;
+    min-height: 100vh; min-height: 100dvh;
+    user-select: none; -webkit-user-select: none;
+    overflow-x: hidden;
+  }
+  #app {
+    width: 100%; max-width: 500px;
+    padding: 20px 16px;
+    display: flex; flex-direction: column; gap: 20px;
+  }
+  
+  /* ---- Header ---- */
+  header {
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  header h1 {
+    font-size: 20px; font-weight: 700;
+    letter-spacing: 1px;
+    background: linear-gradient(135deg, var(--accent), #a78bfa);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .tab-switch {
+    display: flex; gap: 4px; background: var(--card-bg);
+    border-radius: 10px; padding: 3px;
+  }
+  .tab-switch button {
+    border: none; background: transparent; color: var(--muted);
+    padding: 6px 14px; border-radius: 8px; font-size: 13px; cursor: pointer;
+    transition: all 0.2s; font-weight: 500;
+  }
+  .tab-switch button.active {
+    background: rgba(108,140,255,0.15); color: var(--accent);
+  }
+
+  /* ---- Stats bar ---- */
+  .stats-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 13px; color: var(--muted);
+  }
+  .stats-bar .count { color: var(--text); font-weight: 600; font-size: 15px; }
+  .progress-track {
+    flex: 1; margin: 0 16px; height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; background: linear-gradient(90deg, var(--accent), var(--green));
+    border-radius: 2px; transition: width 0.4s ease;
+  }
+
+  /* ---- Card ---- */
+  .card-container {
+    perspective: 800px;
+    height: 320px;
+  }
+  .card {
+    width: 100%; height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .card.flipped { transform: rotateY(180deg); }
+  .card-face {
+    position: absolute; inset: 0;
+    backface-visibility: hidden;
+    border-radius: 20px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center;
+    padding: 32px 28px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3);
+  }
+  .card-back {
+    transform: rotateY(180deg);
+  }
+
+  .word {
+    font-size: 42px; font-weight: 800; letter-spacing: 2px;
+    margin-bottom: 8px; text-align: center;
+  }
+  .phonetic {
+    font-size: 16px; color: var(--muted); margin-bottom: 4px;
+    font-family: 'SF Mono', 'JetBrains Mono', monospace;
+    text-align: center;
+  }
+  .pos-tag {
+    font-size: 12px; color: var(--accent); background: rgba(108,140,255,0.1);
+    padding: 2px 10px; border-radius: 10px; margin-bottom: 12px; font-weight: 500;
+  }
+  .meaning {
+    font-size: 18px; text-align: center; line-height: 1.5; color: #c8c8d8;
+  }
+  .example {
+    margin-top: 16px; font-size: 14px; color: var(--muted); text-align: center; line-height: 1.6;
+    font-style: italic;
+  }
+  .example b { color: var(--accent); font-style: normal; }
+
+  /* ---- Audio button ---- */
+  .audio-btn {
+    margin-top: 16px;
+    width: 52px; height: 52px; border-radius: 50%;
+    border: 2px solid rgba(108,140,255,0.3);
+    background: rgba(108,140,255,0.08);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    font-size: 22px;
+  }
+  .audio-btn:hover { background: rgba(108,140,255,0.18); border-color: rgba(108,140,255,0.5); }
+  .audio-btn:active { transform: scale(0.93); }
+  .audio-btn.playing {
+    background: rgba(108,140,255,0.22); border-color: var(--accent);
+    animation: pulse-audio 0.8s ease infinite;
+  }
+  @keyframes pulse-audio {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(108,140,255,0.4); }
+    50% { box-shadow: 0 0 0 16px rgba(108,140,255,0); }
+  }
+
+  /* ---- Actions ---- */
+  .actions {
+    display: flex; gap: 12px;
+  }
+  .actions button {
+    flex: 1; padding: 14px; border-radius: 14px;
+    border: none; cursor: pointer; font-size: 15px; font-weight: 600;
+    transition: all 0.2s; letter-spacing: 0.5px;
+  }
+  .btn-know {
+    background: rgba(74,222,128,0.12); color: var(--green);
+    border: 1px solid rgba(74,222,128,0.2);
+  }
+  .btn-know:hover { background: rgba(74,222,128,0.22); }
+  .btn-unknown {
+    background: rgba(255,107,138,0.1); color: var(--accent2);
+    border: 1px solid rgba(255,107,138,0.18);
+  }
+  .btn-unknown:hover { background: rgba(255,107,138,0.2); }
+
+  /* ---- Review list ---- */
+  .review-list { display: flex; flex-direction: column; gap: 8px; }
+  .review-item {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 14px; padding: 14px 18px;
+    display: flex; align-items: center; gap: 12px;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .review-item:hover { border-color: rgba(108,140,255,0.3); }
+  .review-item .rw {
+    flex: 1; font-size: 16px; font-weight: 600;
+  }
+  .review-item .rm {
+    font-size: 13px; color: var(--muted);
+  }
+  .mini-audio {
+    width: 32px; height: 32px; border-radius: 50%;
+    border: 1px solid rgba(108,140,255,0.25);
+    background: transparent; color: var(--accent);
+    cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* ---- Keyboard hints ---- */
+  .hint {
+    text-align: center; font-size: 12px; color: var(--muted);
+    display: flex; justify-content: center; gap: 16px;
+  }
+  .hint kbd {
+    background: rgba(255,255,255,0.06); padding: 2px 8px;
+    border-radius: 4px; border: 1px solid rgba(255,255,255,0.1);
+    font-size: 11px; font-family: 'SF Mono', monospace;
+  }
+
+  /* ---- Animation ---- */
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .card-face { animation: slideIn 0.35s ease; }
+
+  /* ---- Settings ---- */
+  .settings-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 0; font-size: 14px;
+  }
+  .settings-row select {
+    background: var(--card-bg); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 6px 12px; font-size: 13px;
+  }
+
+  /* ---- Word list ---- */
+  .search-bar {
+    width: 100%; padding: 10px 16px; border-radius: 12px;
+    border: 1px solid var(--border); background: var(--card-bg);
+    color: var(--text); font-size: 14px; outline: none;
+  }
+  .search-bar::placeholder { color: var(--muted); }
+  .search-bar:focus { border-color: var(--accent); }
+  .word-table {
+    width: 100%; margin-top: 12px; border-collapse: collapse;
+  }
+  .word-table th {
+    text-align: left; font-size: 11px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 1px;
+    padding: 8px 10px; border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; background: var(--bg); z-index: 1;
+  }
+  .word-table td {
+    padding: 10px 10px; font-size: 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    vertical-align: middle;
+  }
+  .word-table tr { cursor: pointer; transition: background 0.15s; }
+  .word-table tr:hover { background: rgba(108,140,255,0.06); }
+  .word-table .col-word { font-weight: 700; color: var(--text); font-size: 15px; }
+  .word-table .col-phonetic { font-family: 'SF Mono', monospace; color: var(--muted); font-size: 12px; white-space: nowrap; }
+  .word-table .col-meaning { font-size: 13px; color: #c0c0cc; line-height: 1.4; }
+  .word-table .col-audio { width: 36px; text-align: center; }
+  .table-mini-audio {
+    width: 28px; height: 28px; border-radius: 50%;
+    border: 1px solid rgba(108,140,255,0.2);
+    background: transparent; color: var(--accent);
+    cursor: pointer; font-size: 11px;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .table-mini-audio:active { transform: scale(0.9); background: rgba(108,140,255,0.15); }
+  .list-scroll {
+    max-height: calc(100vh - 220px); overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  @media (max-width: 400px) {
+    .word { font-size: 32px; }
+    .card-container { height: 280px; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>📖 CET-4</h1>
+    <div class="tab-switch">
+      <button onclick="switchTab('learn')" id="tab-learn" class="active">学习</button>
+      <button onclick="switchTab('review')" id="tab-review">复习</button>
+      <button onclick="switchTab('list')" id="tab-list">单词表</button>
+    </div>
+  </header>
+
+  <!-- Stats -->
+  <div class="stats-bar">
+    <span class="count" id="stat-progress">0/0</span>
+    <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    <span id="stat-mastery">0%</span>
+  </div>
+
+  <!-- Learn tab -->
+  <div id="view-learn">
+    <div class="card-container">
+      <div class="card" id="card">
+        <div class="card-face card-front" id="card-front">
+          <div class="word" id="word-el">abandon</div>
+          <div class="phonetic" id="phonetic-el">/əˈbændən/</div>
+          <div class="pos-tag" id="pos-el">v.</div>
+          <div class="meaning" id="meaning-el">放弃，抛弃</div>
+          <button class="audio-btn" id="audio-btn" onclick="speakWord()" title="点击发音">🔊</button>
+          <div style="font-size:11px;color:var(--muted);margin-top:6px;">点击卡片翻转查看例句</div>
+        </div>
+        <div class="card-face card-back" id="card-back">
+          <div class="word" id="word-el-back">abandon</div>
+          <div class="example" id="example-el">They had to <b>abandon</b> the plan.</div>
+          <button class="audio-btn" onclick="speakWord()">🔊</button>
+          <div style="font-size:11px;color:var(--muted);margin-top:6px;">再次点击翻转</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn-unknown" id="btn-unknown" onclick="markUnknown()">不认识</button>
+      <button class="btn-know" id="btn-know" onclick="markKnown()">认识</button>
+    </div>
+
+    <div class="hint">
+      <span><kbd>←</kbd> 不认识</span>
+      <span><kbd>→</kbd> 认识</span>
+      <span><kbd>空格</kbd> 翻转/发音</span>
+    </div>
+  </div>
+
+  <!-- Review tab -->
+  <div id="view-review" style="display:none;">
+    <div style="font-size:13px;color:var(--muted);margin-bottom:4px;" id="review-count">待复习：0 个单词</div>
+    <div class="review-list" id="review-list"></div>
+  </div>
+
+  <!-- Word list tab -->
+  <div id="view-list" style="display:none;">
+    <input class="search-bar" id="search-input" type="text" placeholder="搜索单词..." oninput="renderWordList()">
+    <div class="list-scroll">
+      <table class="word-table">
+        <thead><tr>
+          <th class="col-audio">🔊</th>
+          <th>单词</th>
+          <th>音标</th>
+          <th>释义</th>
+        </tr></thead>
+        <tbody id="word-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== 四级核心词汇库 ====================
+const VOCAB = [
+  { w:"abandon", p:"/əˈbændən/", m:"v. 放弃，抛弃；n. 放任", e:"They had to <b>abandon</b> the sinking ship." },
+  { w:"ability", p:"/əˈbɪləti/", m:"n. 能力，才能", e:"She has the <b>ability</b> to solve complex problems." },
+  { w:"abnormal", p:"/æbˈnɔːml/", m:"adj. 反常的，异常的", e:"The test results showed <b>abnormal</b> readings." },
+  { w:"aboard", p:"/əˈbɔːd/", m:"prep./adv. 在船（飞机、车）上", e:"All passengers are now <b>aboard</b> the plane." },
+  { w:"abolish", p:"/əˈbɒlɪʃ/", m:"v. 废除，废止", e:"The government decided to <b>abolish</b> the old law." },
+  { w:"absorb", p:"/əbˈsɔːb/", m:"v. 吸收；使全神贯注", e:"Plants <b>absorb</b> water through their roots." },
+  { w:"abstract", p:"/ˈæbstrækt/", m:"adj. 抽象的；n. 摘要", e:"The concept is too <b>abstract</b> for beginners." },
+  { w:"abundant", p:"/əˈbʌndənt/", m:"adj. 丰富的，充裕的", e:"The region has <b>abundant</b> natural resources." },
+  { w:"abuse", p:"/əˈbjuːz/", m:"v./n. 滥用；虐待", e:"He was accused of <b>abusing</b> his power." },
+  { w:"academic", p:"/ˌækəˈdemɪk/", m:"adj. 学术的；n. 学者", e:"She published several <b>academic</b> papers." },
+  { w:"accelerate", p:"/əkˈseləreɪt/", m:"v. 加速，加快", e:"The car <b>accelerated</b> smoothly onto the highway." },
+  { w:"access", p:"/ˈækses/", m:"n. 通道；使用权；v. 访问", e:"Students have free <b>access</b> to the library." },
+  { w:"accommodate", p:"/əˈkɒmədeɪt/", m:"v. 容纳；为…提供住宿", e:"The hotel can <b>accommodate</b> 200 guests." },
+  { w:"accompany", p:"/əˈkʌmpəni/", m:"v. 陪伴；伴随", e:"She <b>accompanied</b> me to the airport." },
+  { w:"accomplish", p:"/əˈkʌmplɪʃ/", m:"v. 完成，实现", e:"We <b>accomplished</b> our mission on time." },
+  { w:"account", p:"/əˈkaʊnt/", m:"n. 账户；描述；v. 解释", e:"How do you <b>account</b> for the missing money?" },
+  { w:"accumulate", p:"/əˈkjuːmjəleɪt/", m:"v. 积累，积聚", e:"Dust tends to <b>accumulate</b> in corners." },
+  { w:"accurate", p:"/ˈækjərət/", m:"adj. 准确的，精确的", e:"We need <b>accurate</b> data for the analysis." },
+  { w:"achieve", p:"/əˈtʃiːv/", m:"v. 达到，取得", e:"He finally <b>achieved</b> his lifelong dream." },
+  { w:"acknowledge", p:"/əkˈnɒlɪdʒ/", m:"v. 承认；感谢", e:"She <b>acknowledged</b> her mistake publicly." },
+  { w:"acquire", p:"/əˈkwaɪə(r)/", m:"v. 获得，习得", e:"It takes years to <b>acquire</b> a new language." },
+  { w:"adapt", p:"/əˈdæpt/", m:"v. 适应；改编", e:"Animals must <b>adapt</b> to their environment." },
+  { w:"adequate", p:"/ˈædɪkwət/", m:"adj. 足够的，适当的", e:"The supply is <b>adequate</b> for our needs." },
+  { w:"adjust", p:"/əˈdʒʌst/", m:"v. 调整，适应", e:"You can <b>adjust</b> the volume with this knob." },
+  { w:"administration", p:"/ədˌmɪnɪˈstreɪʃn/", m:"n. 管理；行政", e:"The <b>administration</b> announced new policies." },
+  { w:"admire", p:"/ədˈmaɪə(r)/", m:"v. 钦佩，赞赏", e:"I really <b>admire</b> her courage and honesty." },
+  { w:"adopt", p:"/əˈdɒpt/", m:"v. 采用；收养", e:"The company decided to <b>adopt</b> a new strategy." },
+  { w:"advance", p:"/ədˈvɑːns/", m:"v./n. 前进；进步", e:"Technology continues to <b>advance</b> rapidly." },
+  { w:"advertise", p:"/ˈædvətaɪz/", m:"v. 做广告，宣传", e:"They <b>advertise</b> their products on social media." },
+  { w:"affair", p:"/əˈfeə(r)/", m:"n. 事务；事件", e:"He handles all the financial <b>affairs</b>." },
+  { w:"affect", p:"/əˈfekt/", m:"v. 影响；感动", e:"The weather can <b>affect</b> your mood." },
+  { w:"afford", p:"/əˈfɔːd/", m:"v. 负担得起；提供", e:"I can't <b>afford</b> a new car right now." },
+  { w:"aggressive", p:"/əˈɡresɪv/", m:"adj. 侵略的；好斗的", e:"His <b>aggressive</b> behavior scared everyone." },
+  { w:"allocate", p:"/ˈæləkeɪt/", m:"v. 分配，拨出", e:"The budget was <b>allocated</b> to various projects." },
+  { w:"alternative", p:"/ɔːlˈtɜːnətɪv/", m:"n. 替代方案；adj. 替代的", e:"We need to find an <b>alternative</b> solution." },
+  { w:"amateur", p:"/ˈæmətə(r)/", m:"n. 业余爱好者；adj. 业余的", e:"He's an <b>amateur</b> photographer." },
+  { w:"ambition", p:"/æmˈbɪʃn/", m:"n. 雄心，抱负", e:"Her <b>ambition</b> is to become a doctor." },
+  { w:"analyze", p:"/ˈænəlaɪz/", m:"v. 分析", e:"We need to <b>analyze</b> the data carefully." },
+  { w:"ancestor", p:"/ˈænsestə(r)/", m:"n. 祖先，祖宗", e:"Our <b>ancestors</b> lived in caves thousands of years ago." },
+  { w:"annual", p:"/ˈænjuəl/", m:"adj. 每年的；n. 年刊", e:"The company holds an <b>annual</b> meeting in June." },
+  { w:"anxiety", p:"/æŋˈzaɪəti/", m:"n. 焦虑，忧虑", e:"She suffers from extreme <b>anxiety</b> before exams." },
+  { w:"apparent", p:"/əˈpærənt/", m:"adj. 明显的，显而易见的", e:"It became <b>apparent</b> that he was lying." },
+  { w:"appeal", p:"/əˈpiːl/", m:"v./n. 呼吁；吸引", e:"The idea of working abroad <b>appeals</b> to me." },
+  { w:"appetite", p:"/ˈæpɪtaɪt/", m:"n. 食欲；胃口", e:"I have a huge <b>appetite</b> after exercising." },
+  { w:"apply", p:"/əˈplaɪ/", m:"v. 申请；应用", e:"You should <b>apply</b> for the scholarship." },
+  { w:"appoint", p:"/əˈpɔɪnt/", m:"v. 任命；约定", e:"They <b>appointed</b> her as the new manager." },
+  { w:"appreciate", p:"/əˈpriːʃieɪt/", m:"v. 欣赏；感激", e:"I <b>appreciate</b> your help so much." },
+  { w:"approach", p:"/əˈprəʊtʃ/", m:"v./n. 接近；方法", e:"A new <b>approach</b> to teaching is needed." },
+  { w:"appropriate", p:"/əˈprəʊpriət/", m:"adj. 适当的，合适的", e:"Is this outfit <b>appropriate</b> for the interview?" },
+  { w:"approve", p:"/əˈpruːv/", m:"v. 批准；赞成", e:"The committee <b>approved</b> the proposal." },
+  { w:"arise", p:"/əˈraɪz/", m:"v. 出现，产生", e:"Problems may <b>arise</b> during the process." },
+  { w:"artificial", p:"/ˌɑːtɪˈfɪʃl/", m:"adj. 人工的，人造的", e:"This cake contains no <b>artificial</b> flavors." },
+  { w:"assemble", p:"/əˈsembl/", m:"v. 集合；组装", e:"We need to <b>assemble</b> the furniture ourselves." },
+  { w:"assess", p:"/əˈses/", m:"v. 评估，评定", e:"Teachers <b>assess</b> students' progress regularly." },
+  { w:"assign", p:"/əˈsaɪn/", m:"v. 分配，指派", e:"The teacher <b>assigned</b> homework to everyone." },
+  { w:"assist", p:"/əˈsɪst/", m:"v. 帮助，协助", e:"Can I <b>assist</b> you with anything?" },
+  { w:"associate", p:"/əˈsəʊʃieɪt/", m:"v. 联系；交往；n. 同事", e:"People often <b>associate</b> red with danger." },
+  { w:"assume", p:"/əˈsjuːm/", m:"v. 假定；承担", e:"I <b>assume</b> you've already eaten." },
+  { w:"atmosphere", p:"/ˈætməsfɪə(r)/", m:"n. 大气；氛围", e:"The restaurant has a romantic <b>atmosphere</b>." },
+  { w:"attach", p:"/əˈtætʃ/", m:"v. 附上；连接；依恋", e:"Please <b>attach</b> your photo to the form." },
+  { w:"attain", p:"/əˈteɪn/", m:"v. 达到，获得", e:"He worked hard to <b>attain</b> his goals." },
+  { w:"attempt", p:"/əˈtempt/", m:"v./n. 尝试，企图", e:"She made an <b>attempt</b> to break the record." },
+  { w:"attend", p:"/əˈtend/", m:"v. 参加；照料", e:"Will you <b>attend</b> the meeting tomorrow?" },
+  { w:"attitude", p:"/ˈætɪtjuːd/", m:"n. 态度，看法", e:"A positive <b>attitude</b> makes a big difference." },
+  { w:"attract", p:"/əˈtrækt/", m:"v. 吸引", e:"The exhibition <b>attracted</b> thousands of visitors." },
+  { w:"authority", p:"/ɔːˈθɒrəti/", m:"n. 权威；当局", e:"The local <b>authority</b> is responsible for roads." },
+  { w:"available", p:"/əˈveɪləbl/", m:"adj. 可用的，可获得的", e:"Is the manager <b>available</b> right now?" },
+  { w:"average", p:"/ˈævərɪdʒ/", m:"adj. 平均的；普通的；n. 平均数", e:"The <b>average</b> temperature in July is 30°C." },
+  { w:"avoid", p:"/əˈvɔɪd/", m:"v. 避免，回避", e:"Try to <b>avoid</b> eating too much sugar." },
+  { w:"award", p:"/əˈwɔːd/", m:"v./n. 授予；奖品", e:"She won an <b>award</b> for her performance." },
+  { w:"aware", p:"/əˈweə(r)/", m:"adj. 意识到的", e:"Are you <b>aware</b> of the risks involved?" },
+  { w:"barrier", p:"/ˈbæriə(r)/", m:"n. 障碍，屏障", e:"Language can be a <b>barrier</b> to communication." },
+  { w:"beneath", p:"/bɪˈniːθ/", m:"prep./adv. 在…下方", e:"The treasure was buried <b>beneath</b> the tree." },
+  { w:"benefit", p:"/ˈbenɪfɪt/", m:"n. 利益；v. 受益", e:"Exercise has many health <b>benefits</b>." },
+  { w:"blame", p:"/bleɪm/", m:"v./n. 责备，归咎", e:"Don't <b>blame</b> others for your own mistakes." },
+  { w:"budget", p:"/ˈbʌdʒɪt/", m:"n. 预算；v. 做预算", e:"We need to stay within our <b>budget</b>." },
+  { w:"burden", p:"/ˈbɜːdn/", m:"n. 负担；v. 使负重", e:"The heavy workload became a <b>burden</b>." },
+  { w:"campaign", p:"/kæmˈpeɪn/", m:"n. 运动；战役", e:"The presidential <b>campaign</b> lasted months." },
+  { w:"capable", p:"/ˈkeɪpəbl/", m:"adj. 有能力的", e:"She is quite <b>capable</b> of handling this." },
+  { w:"capacity", p:"/kəˈpæsəti/", m:"n. 容量；能力", e:"The hall has a <b>capacity</b> of 500 people." },
+  { w:"capture", p:"/ˈkæptʃə(r)/", m:"v. 捕获；引起", e:"The photo <b>captured</b> a beautiful moment." },
+  { w:"career", p:"/kəˈrɪə(r)/", m:"n. 职业，生涯", e:"She built a successful <b>career</b> in finance." },
+  { w:"category", p:"/ˈkætəɡəri/", m:"n. 类别，种类", e:"Which <b>category</b> does this book belong to?" },
+  { w:"cautious", p:"/ˈkɔːʃəs/", m:"adj. 谨慎的，小心的", e:"Be <b>cautious</b> when crossing the street." },
+  { w:"challenge", p:"/ˈtʃælɪndʒ/", m:"n./v. 挑战", e:"This project is a real <b>challenge</b>." },
+  { w:"character", p:"/ˈkærəktə(r)/", m:"n. 性格；角色；字符", e:"He has a strong <b>character</b>." },
+  { w:"circumstance", p:"/ˈsɜːkəmstəns/", m:"n. 环境，情况", e:"Under no <b>circumstances</b> should you lie." },
+  { w:"civilization", p:"/ˌsɪvəlaɪˈzeɪʃn/", m:"n. 文明", e:"Ancient <b>civilization</b> left many mysteries." },
+  { w:"claim", p:"/kleɪm/", m:"v./n. 声称；索赔", e:"He <b>claimed</b> to have seen a UFO." },
+  { w:"collapse", p:"/kəˈlæps/", m:"v./n. 倒塌；崩溃", e:"The building <b>collapsed</b> in the earthquake." },
+  { w:"colleague", p:"/ˈkɒliːɡ/", m:"n. 同事", e:"I discussed the idea with my <b>colleague</b>." },
+  { w:"combine", p:"/kəmˈbaɪn/", m:"v. 结合，联合", e:"<b>Combine</b> the flour with butter and sugar." },
+  { w:"comment", p:"/ˈkɒment/", m:"n./v. 评论", e:"He refused to <b>comment</b> on the matter." },
+  { w:"commit", p:"/kəˈmɪt/", m:"v. 犯（罪）；承诺", e:"She <b>committed</b> herself to the project." },
+  { w:"communicate", p:"/kəˈmjuːnɪkeɪt/", m:"v. 交流，沟通", e:"We need to <b>communicate</b> more effectively." },
+  { w:"community", p:"/kəˈmjuːnəti/", m:"n. 社区；群体", e:"The local <b>community</b> supported the project." },
+  { w:"companion", p:"/kəmˈpæniən/", m:"n. 同伴，伙伴", e:"He was my loyal <b>companion</b> for years." },
+  { w:"compare", p:"/kəmˈpeə(r)/", m:"v. 比较，对比", e:"Don't <b>compare</b> yourself to others." },
+  { w:"compensate", p:"/ˈkɒmpenseɪt/", m:"v. 补偿，赔偿", e:"The company <b>compensated</b> the victims." },
+  { w:"compete", p:"/kəmˈpiːt/", m:"v. 竞争，比赛", e:"Athletes from 50 countries will <b>compete</b>." },
+  { w:"complain", p:"/kəmˈpleɪn/", m:"v. 抱怨，投诉", e:"Customers <b>complained</b> about the service." },
+  { w:"complex", p:"/ˈkɒmpleks/", m:"adj. 复杂的；n. 综合体", e:"The problem is more <b>complex</b> than it seems." },
+  { w:"component", p:"/kəmˈpəʊnənt/", m:"n. 组成部分，部件", e:"Each <b>component</b> must be tested carefully." },
+  { w:"concentrate", p:"/ˈkɒnsntreɪt/", m:"v. 集中，专注", e:"I can't <b>concentrate</b> with all this noise." },
+  { w:"concept", p:"/ˈkɒnsept/", m:"n. 概念，观念", e:"The <b>concept</b> of time is fascinating." },
+  { w:"concern", p:"/kənˈsɜːn/", m:"n./v. 关心；担忧", e:"Climate change is a global <b>concern</b>." },
+  { w:"conclude", p:"/kənˈkluːd/", m:"v. 得出结论；结束", e:"We can <b>conclude</b> that the plan failed." },
+  { w:"conduct", p:"/kənˈdʌkt/", m:"v. 进行；指挥；n. 行为", e:"They <b>conducted</b> a series of experiments." },
+  { w:"conference", p:"/ˈkɒnfərəns/", m:"n. 会议，讨论会", e:"She gave a speech at the <b>conference</b>." },
+  { w:"confident", p:"/ˈkɒnfɪdənt/", m:"adj. 自信的", e:"He felt <b>confident</b> about passing the exam." },
+  { w:"confirm", p:"/kənˈfɜːm/", m:"v. 确认，证实", e:"Please <b>confirm</b> your booking by email." },
+  { w:"conflict", p:"/ˈkɒnflɪkt/", m:"n./v. 冲突，矛盾", e:"There was a <b>conflict</b> between the two sides." },
+  { w:"confront", p:"/kənˈfrʌnt/", m:"v. 面对，对抗", e:"You need to <b>confront</b> your fears." },
+  { w:"conscious", p:"/ˈkɒnʃəs/", m:"adj. 有意识的；清醒的", e:"He was barely <b>conscious</b> after the accident." },
+  { w:"consequence", p:"/ˈkɒnsɪkwəns/", m:"n. 结果，后果", e:"Every action has its <b>consequences</b>." },
+  { w:"conservative", p:"/kənˈsɜːvətɪv/", m:"adj. 保守的；n. 保守者", e:"His parents have <b>conservative</b> values." },
+  { w:"consider", p:"/kənˈsɪdə(r)/", m:"v. 考虑；认为", e:"Please <b>consider</b> my suggestion carefully." },
+  { w:"consistent", p:"/kənˈsɪstənt/", m:"adj. 一致的，始终如一的", e:"Her performance has been <b>consistent</b>." },
+  { w:"constant", p:"/ˈkɒnstənt/", m:"adj. 不断的；恒定的", e:"The <b>constant</b> noise drove me crazy." },
+  { w:"construct", p:"/kənˈstrʌkt/", m:"v. 建造，构建", e:"They <b>constructed</b> a bridge across the river." },
+  { w:"consume", p:"/kənˈsjuːm/", m:"v. 消耗；消费", e:"We <b>consume</b> too much energy every day." },
+  { w:"contact", p:"/ˈkɒntækt/", m:"n./v. 联系，接触", e:"How can I <b>contact</b> you if needed?" },
+  { w:"contain", p:"/kənˈteɪn/", m:"v. 包含；控制", e:"This box <b>contains</b> all the tools." },
+  { w:"contemporary", p:"/kənˈtemprəri/", m:"adj. 当代的；同时代的", e:"She studies <b>contemporary</b> art." },
+  { w:"content", p:"/ˈkɒntent/ /kənˈtent/", m:"n. 内容；adj. 满足的", e:"The <b>content</b> of the book is excellent." },
+  { w:"contest", p:"/ˈkɒntest/", m:"n./v. 竞赛；争辩", e:"She won first prize in the singing <b>contest</b>." },
+  { w:"contract", p:"/ˈkɒntrækt/", m:"n. 合同；v. 收缩", e:"Both parties signed the <b>contract</b>." },
+  { w:"contribute", p:"/kənˈtrɪbjuːt/", m:"v. 贡献；捐献", e:"Everyone should <b>contribute</b> to the team." },
+  { w:"convenient", p:"/kənˈviːniənt/", m:"adj. 方便的", e:"Is it <b>convenient</b> for you to meet at 3?" },
+  { w:"conventional", p:"/kənˈvenʃənl/", m:"adj. 传统的，常规的", e:"She rejected <b>conventional</b> wisdom." },
+  { w:"convince", p:"/kənˈvɪns/", m:"v. 说服，使确信", e:"He tried to <b>convince</b> me to stay." },
+  { w:"cooperate", p:"/kəʊˈɒpəreɪt/", m:"v. 合作，协作", e:"The two companies decided to <b>cooperate</b>." },
+  { w:"correspond", p:"/ˌkɒrəˈspɒnd/", m:"v. 符合；通信", e:"His actions don't <b>correspond</b> with his words." },
+  { w:"crash", p:"/kræʃ/", m:"v./n. 碰撞；崩溃", e:"The computer <b>crashed</b> and I lost my work." },
+  { w:"create", p:"/kriˈeɪt/", m:"v. 创造，创建", e:"Artists <b>create</b> beauty from imagination." },
+  { w:"crisis", p:"/ˈkraɪsɪs/", m:"n. 危机", e:"The country is facing an economic <b>crisis</b>." },
+  { w:"crucial", p:"/ˈkruːʃl/", m:"adj. 至关重要的", e:"This decision is <b>crucial</b> for our future." },
+  { w:"cultivate", p:"/ˈkʌltɪveɪt/", m:"v. 培养；耕种", e:"Try to <b>cultivate</b> good habits." },
+  { w:"curiosity", p:"/ˌkjʊəriˈɒsəti/", m:"n. 好奇心", e:"Children have natural <b>curiosity</b>." },
+  { w:"debate", p:"/dɪˈbeɪt/", m:"n./v. 辩论，争论", e:"They had a heated <b>debate</b> on the topic." },
+  { w:"decade", p:"/ˈdekeɪd/", m:"n. 十年", e:"The city has changed a lot in the last <b>decade</b>." },
+  { w:"decline", p:"/dɪˈklaɪn/", m:"v./n. 下降；拒绝", e:"The population has been in <b>decline</b>." },
+  { w:"decorate", p:"/ˈdekəreɪt/", m:"v. 装饰，装潢", e:"They <b>decorated</b> the room with flowers." },
+  { w:"decrease", p:"/dɪˈkriːs/", m:"v./n. 减少，降低", e:"We saw a <b>decrease</b> in sales this month." },
+  { w:"defeat", p:"/dɪˈfiːt/", m:"v./n. 击败，战胜", e:"The army suffered a major <b>defeat</b>." },
+  { w:"defend", p:"/dɪˈfend/", m:"v. 防御；辩护", e:"He hired a lawyer to <b>defend</b> him." },
+  { w:"define", p:"/dɪˈfaɪn/", m:"v. 定义；界定", e:"How do you <b>define</b> success?" },
+  { w:"deliberate", p:"/dɪˈlɪbərət/", m:"adj. 故意的；深思熟虑的", e:"It was a <b>deliberate</b> attempt to mislead." },
+  { w:"deliver", p:"/dɪˈlɪvə(r)/", m:"v. 递送；发表", e:"The package was <b>delivered</b> this morning." },
+  { w:"demonstrate", p:"/ˈdemənstreɪt/", m:"v. 展示；证明", e:"Let me <b>demonstrate</b> how it works." },
+  { w:"deny", p:"/dɪˈnaɪ/", m:"v. 否认；拒绝", e:"He <b>denied</b> stealing the money." },
+  { w:"depart", p:"/dɪˈpɑːt/", m:"v. 离开，出发", e:"The train <b>departs</b> at 8 o'clock." },
+  { w:"depend", p:"/dɪˈpend/", m:"v. 依靠；取决于", e:"It <b>depends</b> on the weather." },
+  { w:"deposit", p:"/dɪˈpɒzɪt/", m:"v./n. 存入；押金", e:"I need to <b>deposit</b> this check at the bank." },
+  { w:"depress", p:"/dɪˈpres/", m:"v. 使沮丧；压低", e:"The news <b>depressed</b> everyone." },
+  { w:"derive", p:"/dɪˈraɪv/", m:"v. 源自；获得", e:"Many words <b>derive</b> from Latin." },
+  { w:"deserve", p:"/dɪˈzɜːv/", m:"v. 值得，应得", e:"You <b>deserve</b> a vacation after all that work." },
+  { w:"desire", p:"/dɪˈzaɪə(r)/", m:"n./v. 渴望，愿望", e:"She expressed a strong <b>desire</b> to learn." },
+  { w:"despite", p:"/dɪˈspaɪt/", m:"prep. 尽管，不管", e:"<b>Despite</b> the rain, we went out." },
+  { w:"destination", p:"/ˌdestɪˈneɪʃn/", m:"n. 目的地", e:"We finally reached our <b>destination</b>." },
+  { w:"destroy", p:"/dɪˈstrɔɪ/", m:"v. 破坏，毁坏", e:"The fire <b>destroyed</b> the entire building." },
+  { w:"detect", p:"/dɪˈtekt/", m:"v. 发现，察觉", e:"The machine can <b>detect</b> tiny movements." },
+  { w:"determine", p:"/dɪˈtɜːmɪn/", m:"v. 决定；决心", e:"We need to <b>determine</b> the cause of the problem." },
+  { w:"device", p:"/dɪˈvaɪs/", m:"n. 设备，装置", e:"This <b>device</b> measures your heart rate." },
+  { w:"devote", p:"/dɪˈvəʊt/", m:"v. 奉献，致力于", e:"She <b>devoted</b> her life to helping others." },
+  { w:"discipline", p:"/ˈdɪsəplɪn/", m:"n. 纪律；学科；v. 训练", e:"Good <b>discipline</b> is key to success." },
+  { w:"discount", p:"/ˈdɪskaʊnt/", m:"n. 折扣；v. 打折", e:"They offer a 20% <b>discount</b> for students." },
+  { w:"display", p:"/dɪˈspleɪ/", m:"v./n. 展示，陈列", e:"The museum <b>displayed</b> ancient artifacts." },
+  { w:"dispose", p:"/dɪˈspəʊz/", m:"v. 处理，处置", e:"How should we <b>dispose</b> of the waste?" },
+  { w:"dispute", p:"/dɪˈspjuːt/", m:"n./v. 争论，纠纷", e:"The two countries settled the <b>dispute</b>." },
+  { w:"dissolve", p:"/dɪˈzɒlv/", m:"v. 溶解；解散", e:"Sugar <b>dissolves</b> easily in hot water." },
+  { w:"distinct", p:"/dɪˈstɪŋkt/", m:"adj. 明显的；不同的", e:"There are <b>distinct</b> differences between them." },
+  { w:"distinguish", p:"/dɪˈstɪŋɡwɪʃ/", m:"v. 区分，辨别", e:"Can you <b>distinguish</b> real from fake?" },
+  { w:"distribute", p:"/dɪˈstrɪbjuːt/", m:"v. 分配，分发", e:"They <b>distributed</b> food to the homeless." },
+  { w:"diverse", p:"/daɪˈvɜːs/", m:"adj. 多样的，不同的", e:"The city has a <b>diverse</b> population." },
+  { w:"domestic", p:"/dəˈmestɪk/", m:"adj. 国内的；家庭的", e:"She prefers <b>domestic</b> travel to international." },
+  { w:"dominate", p:"/ˈdɒmɪneɪt/", m:"v. 支配，主导", e:"The company <b>dominates</b> the market." },
+  { w:"donate", p:"/dəʊˈneɪt/", m:"v. 捐赠，捐献", e:"He <b>donated</b> blood three times last year." },
+  { w:"draft", p:"/drɑːft/", m:"n. 草稿；v. 起草", e:"I've finished the first <b>draft</b> of my essay." },
+  { w:"dramatic", p:"/drəˈmætɪk/", m:"adj. 戏剧性的；巨大的", e:"There has been a <b>dramatic</b> improvement." },
+  { w:"economy", p:"/ɪˈkɒnəmi/", m:"n. 经济；节约", e:"The global <b>economy</b> is recovering slowly." },
+  { w:"edition", p:"/ɪˈdɪʃn/", m:"n. 版本", e:"This is the latest <b>edition</b> of the book." },
+  { w:"efficient", p:"/ɪˈfɪʃnt/", m:"adj. 高效的", e:"This method is more <b>efficient</b>." },
+  { w:"elaborate", p:"/ɪˈlæbərət/", m:"adj. 精心制作的；v. 详细说明", e:"Could you <b>elaborate</b> on your plan?" },
+  { w:"eliminate", p:"/ɪˈlɪmɪneɪt/", m:"v. 消除，淘汰", e:"We must <b>eliminate</b> all sources of error." },
+  { w:"embrace", p:"/ɪmˈbreɪs/", m:"v. 拥抱；接受", e:"We should <b>embrace</b> new technologies." },
+  { w:"emerge", p:"/iˈmɜːdʒ/", m:"v. 出现，浮现", e:"New facts <b>emerged</b> during the investigation." },
+  { w:"emotion", p:"/ɪˈməʊʃn/", m:"n. 情感，情绪", e:"She struggled to control her <b>emotions</b>." },
+  { w:"emphasis", p:"/ˈemfəsɪs/", m:"n. 强调，重点", e:"The school puts great <b>emphasis</b> on discipline." },
+  { w:"employ", p:"/ɪmˈplɔɪ/", m:"v. 雇佣；使用", e:"The company <b>employs</b> over 500 people." },
+  { w:"enable", p:"/ɪˈneɪbl/", m:"v. 使能够", e:"The scholarship <b>enabled</b> her to attend college." },
+  { w:"encounter", p:"/ɪnˈkaʊntə(r)/", m:"v./n. 遭遇，遇到", e:"We <b>encountered</b> many difficulties." },
+  { w:"encourage", p:"/ɪnˈkʌrɪdʒ/", m:"v. 鼓励，激励", e:"Parents should <b>encourage</b> their children." },
+  { w:"engage", p:"/ɪnˈɡeɪdʒ/", m:"v. 从事；吸引；订婚", e:"Students should <b>engage</b> in class discussions." },
+  { w:"enormous", p:"/ɪˈnɔːməs/", m:"adj. 巨大的", e:"The project requires an <b>enormous</b> amount of work." },
+  { w:"ensure", p:"/ɪnˈʃʊə(r)/", m:"v. 确保，保证", e:"Please <b>ensure</b> the door is locked." },
+  { w:"enterprise", p:"/ˈentəpraɪz/", m:"n. 企业；事业", e:"She started her own <b>enterprise</b> at 25." },
+  { w:"enthusiasm", p:"/ɪnˈθjuːziæzəm/", m:"n. 热情，热心", e:"He showed great <b>enthusiasm</b> for the project." },
+  { w:"environment", p:"/ɪnˈvaɪrənmənt/", m:"n. 环境", e:"We must protect the <b>environment</b>." },
+  { w:"equip", p:"/ɪˈkwɪp/", m:"v. 装备，配备", e:"The lab is <b>equipped</b> with modern tools." },
+  { w:"essential", p:"/ɪˈsenʃl/", m:"adj. 必要的，本质的", e:"Water is <b>essential</b> for life." },
+  { w:"establish", p:"/ɪˈstæblɪʃ/", m:"v. 建立，设立", e:"They <b>established</b> a new company in 2020." },
+  { w:"estimate", p:"/ˈestɪmeɪt/", m:"v./n. 估计，估算", e:"Can you <b>estimate</b> the cost of repairs?" },
+  { w:"evaluate", p:"/ɪˈvæljueɪt/", m:"v. 评价，评估", e:"We need to <b>evaluate</b> the results." },
+  { w:"evidence", p:"/ˈevɪdəns/", m:"n. 证据，迹象", e:"There is no <b>evidence</b> to support his claim." },
+  { w:"evolve", p:"/iˈvɒlv/", m:"v. 进化；发展", e:"The company has <b>evolved</b> over the years." },
+  { w:"exaggerate", p:"/ɪɡˈzædʒəreɪt/", m:"v. 夸张，夸大", e:"Don't <b>exaggerate</b> the dangers." },
+  { w:"exceed", p:"/ɪkˈsiːd/", m:"v. 超过，超出", e:"The cost should not <b>exceed</b> $100." },
+  { w:"exclude", p:"/ɪkˈskluːd/", m:"v. 排除，排斥", e:"We cannot <b>exclude</b> any possibility." },
+  { w:"execute", p:"/ˈeksɪkjuːt/", m:"v. 执行；处决", e:"The plan was <b>executed</b> perfectly." },
+  { w:"exert", p:"/ɪɡˈzɜːt/", m:"v. 施加；尽力", e:"He <b>exerted</b> all his strength to open the door." },
+  { w:"exhibit", p:"/ɪɡˈzɪbɪt/", m:"v./n. 展览；展示", e:"The artist will <b>exhibit</b> her work next month." },
+  { w:"expand", p:"/ɪkˈspænd/", m:"v. 扩大，扩展", e:"The company plans to <b>expand</b> overseas." },
+  { w:"expense", p:"/ɪkˈspens/", m:"n. 花费，费用", e:"They covered all travel <b>expenses</b>." },
+  { w:"exploit", p:"/ɪkˈsplɔɪt/", m:"v. 开发；剥削", e:"We should <b>exploit</b> renewable energy sources." },
+  { w:"explore", p:"/ɪkˈsplɔː(r)/", m:"v. 探索，探究", e:"Let's <b>explore</b> the possibilities together." },
+  { w:"export", p:"/ɪkˈspɔːt/", m:"v./n. 出口，输出", e:"The country <b>exports</b> coffee to Europe." },
+  { w:"expose", p:"/ɪkˈspəʊz/", m:"v. 暴露；揭露", e:"Don't <b>expose</b> the film to sunlight." },
+  { w:"extend", p:"/ɪkˈstend/", m:"v. 延伸；给予", e:"They decided to <b>extend</b> the deadline." },
+  { w:"extensive", p:"/ɪkˈstensɪv/", m:"adj. 广泛的，大规模的", e:"She has <b>extensive</b> knowledge of history." },
+  { w:"external", p:"/ɪkˈstɜːnl/", m:"adj. 外部的", e:"The <b>external</b> walls need painting." },
+  { w:"extraordinary", p:"/ɪkˈstrɔːdnri/", m:"adj. 非凡的", e:"She has an <b>extraordinary</b> memory." },
+  { w:"extreme", p:"/ɪkˈstriːm/", m:"adj. 极端的；n. 极端", e:"He holds <b>extreme</b> political views." },
+  { w:"facility", p:"/fəˈsɪləti/", m:"n. 设施；能力", e:"The sports <b>facilities</b> are excellent." },
+  { w:"factor", p:"/ˈfæktə(r)/", m:"n. 因素，要素", e:"Money was a key <b>factor</b> in his decision." },
+  { w:"faculty", p:"/ˈfæklti/", m:"n. 能力；全体教员", e:"She joined the <b>faculty</b> of medicine." },
+  { w:"faith", p:"/feɪθ/", m:"n. 信仰；信任", e:"I have <b>faith</b> in your abilities." },
+  { w:"familiar", p:"/fəˈmɪliə(r)/", m:"adj. 熟悉的", e:"The name sounds <b>familiar</b> to me." },
+  { w:"fascinate", p:"/ˈfæsɪneɪt/", m:"v. 使着迷，吸引", e:"Space exploration <b>fascinates</b> me." },
+  { w:"fashion", p:"/ˈfæʃn/", m:"n. 时尚；方式", e:"She always dresses in the latest <b>fashion</b>." },
+  { w:"fatal", p:"/ˈfeɪtl/", m:"adj. 致命的", e:"The accident proved <b>fatal</b>." },
+  { w:"feature", p:"/ˈfiːtʃə(r)/", m:"n. 特征；v. 以…为特色", e:"What are the key <b>features</b> of this phone?" },
+  { w:"figure", p:"/ˈfɪɡə(r)/", m:"n. 数字；人物；v. 认为", e:"He's a well-known <b>figure</b> in politics." },
+  { w:"finance", p:"/ˈfaɪnæns/", m:"n. 财政；v. 资助", e:"She works in <b>finance</b>." },
+  { w:"flexible", p:"/ˈfleksəbl/", m:"adj. 灵活的，可变通的", e:"We need a more <b>flexible</b> approach." },
+  { w:"flourish", p:"/ˈflʌrɪʃ/", m:"v. 繁荣，兴旺", e:"The arts began to <b>flourish</b> in that era." },
+  { w:"focus", p:"/ˈfəʊkəs/", m:"v./n. 集中，聚焦", e:"We need to <b>focus</b> on the main issue." },
+  { w:"forbid", p:"/fəˈbɪd/", m:"v. 禁止，不准", e:"Smoking is <b>forbidden</b> in this area." },
+  { w:"forecast", p:"/ˈfɔːkɑːst/", m:"v./n. 预报，预测", e:"The weather <b>forecast</b> says it will rain." },
+  { w:"foundation", p:"/faʊnˈdeɪʃn/", m:"n. 基础；基金会", e:"Trust is the <b>foundation</b> of any relationship." },
+  { w:"frequent", p:"/ˈfriːkwənt/", m:"adj. 频繁的", e:"He makes <b>frequent</b> trips abroad." },
+  { w:"fulfil", p:"/fʊlˈfɪl/", m:"v. 实现；满足", e:"He hopes to <b>fulfil</b> his dream one day." },
+  { w:"function", p:"/ˈfʌŋkʃn/", m:"n. 功能；v. 运行", e:"What's the <b>function</b> of this button?" },
+  { w:"fundamental", p:"/ˌfʌndəˈmentl/", m:"adj. 基本的，根本的", e:"This is a <b>fundamental</b> principle of physics." },
+  { w:"generate", p:"/ˈdʒenəreɪt/", m:"v. 产生，生成", e:"The wind turbines <b>generate</b> electricity." },
+  { w:"generous", p:"/ˈdʒenərəs/", m:"adj. 慷慨的，大方的", e:"He made a <b>generous</b> donation to the school." },
+  { w:"genuine", p:"/ˈdʒenjuɪn/", m:"adj. 真正的，真诚的", e:"Is this a <b>genuine</b> painting or a copy?" },
+  { w:"globe", p:"/ɡləʊb/", m:"n. 地球；球体", e:"The news spread across the <b>globe</b> quickly." },
+  { w:"gradual", p:"/ˈɡrædʒuəl/", m:"adj. 逐渐的", e:"There has been a <b>gradual</b> improvement." },
+  { w:"grant", p:"/ɡrɑːnt/", m:"v. 授予；n. 拨款", e:"The university <b>granted</b> her a scholarship." },
+  { w:"guarantee", p:"/ˌɡærənˈtiː/", m:"v./n. 保证，担保", e:"There's no <b>guarantee</b> of success." },
+  { w:"halt", p:"/hɔːlt/", m:"v./n. 停止，暂停", e:"Production came to a <b>halt</b>." },
+  { w:"handle", p:"/ˈhændl/", m:"v. 处理；n. 把手", e:"Can you <b>handle</b> this project alone?" },
+  { w:"harsh", p:"/hɑːʃ/", m:"adj. 严酷的；刺耳的", e:"The <b>harsh</b> winter killed many crops." },
+  { w:"hesitate", p:"/ˈhezɪteɪt/", m:"v. 犹豫，迟疑", e:"Don't <b>hesitate</b> to ask for help." },
+  { w:"highlight", p:"/ˈhaɪlaɪt/", m:"v. 强调；n. 亮点", e:"The report <b>highlighted</b> several issues." },
+  { w:"horizon", p:"/həˈraɪzn/", m:"n. 地平线；眼界", e:"Travel broadens your <b>horizon</b>." },
+  { w:"hostile", p:"/ˈhɒstaɪl/", m:"adj. 敌对的，敌意的", e:"He gave me a <b>hostile</b> look." },
+  { w:"identical", p:"/aɪˈdentɪkl/", m:"adj. 完全相同的", e:"The two brothers look almost <b>identical</b>." },
+  { w:"identify", p:"/aɪˈdentɪfaɪ/", m:"v. 识别；认同", e:"Can you <b>identify</b> the source of the problem?" },
+  { w:"ignore", p:"/ɪɡˈnɔː(r)/", m:"v. 忽视，不理睬", e:"You can't <b>ignore</b> the facts." },
+  { w:"illustrate", p:"/ˈɪləstreɪt/", m:"v. 说明；加插图", e:"Let me <b>illustrate</b> with an example." },
+  { w:"imagine", p:"/ɪˈmædʒɪn/", m:"v. 想象，设想", e:"Can you <b>imagine</b> life without electricity?" },
+  { w:"immediate", p:"/ɪˈmiːdiət/", m:"adj. 立即的；直接的", e:"We need an <b>immediate</b> response." },
+  { w:"impact", p:"/ˈɪmpækt/", m:"n./v. 影响；冲击", e:"The new law had a huge <b>impact</b>." },
+  { w:"implement", p:"/ˈɪmplɪment/", m:"v. 实施，执行", e:"It's time to <b>implement</b> the plan." },
+  { w:"imply", p:"/ɪmˈplaɪ/", m:"v. 暗示，意味着", e:"Are you <b>implying</b> that I'm wrong?" },
+  { w:"impose", p:"/ɪmˈpəʊz/", m:"v. 强加；征收", e:"Don't <b>impose</b> your views on others." },
+  { w:"impress", p:"/ɪmˈpres/", m:"v. 给…留下印象", e:"His speech <b>impressed</b> the audience." },
+  { w:"incident", p:"/ˈɪnsɪdənt/", m:"n. 事件，事变", e:"The <b>incident</b> was reported to the police." },
+  { w:"indicate", p:"/ˈɪndɪkeɪt/", m:"v. 表明，指示", e:"Research <b>indicates</b> that exercise helps sleep." },
+  { w:"individual", p:"/ˌɪndɪˈvɪdʒuəl/", m:"adj. 个人的；n. 个体", e:"We respect each <b>individual</b>'s choice." },
+  { w:"inevitable", p:"/ɪnˈevɪtəbl/", m:"adj. 不可避免的", e:"Change is <b>inevitable</b> in life." },
+  { w:"infer", p:"/ɪnˈfɜː(r)/", m:"v. 推断，推论", e:"What can we <b>infer</b> from the data?" },
+  { w:"influence", p:"/ˈɪnfluəns/", m:"n./v. 影响", e:"Her parents had a big <b>influence</b> on her." },
+  { w:"inform", p:"/ɪnˈfɔːm/", m:"v. 通知，告知", e:"Please <b>inform</b> me of any changes." },
+  { w:"initial", p:"/ɪˈnɪʃl/", m:"adj. 最初的；n. 首字母", e:"My <b>initial</b> reaction was shock." },
+  { w:"initiative", p:"/ɪˈnɪʃətɪv/", m:"n. 主动性；倡议", e:"She showed great <b>initiative</b> at work." },
+  { w:"innovation", p:"/ˌɪnəˈveɪʃn/", m:"n. 创新，革新", e:"The company is known for <b>innovation</b>." },
+  { w:"insist", p:"/ɪnˈsɪst/", m:"v. 坚持，坚决要求", e:"He <b>insisted</b> on paying the bill." },
+  { w:"inspect", p:"/ɪnˈspekt/", m:"v. 检查，视察", e:"Please <b>inspect</b> the goods before signing." },
+  { w:"inspire", p:"/ɪnˈspaɪə(r)/", m:"v. 激励；启发", e:"Her story <b>inspired</b> millions of people." },
+  { w:"install", p:"/ɪnˈstɔːl/", m:"v. 安装；任命", e:"We need to <b>install</b> new software." },
+  { w:"instance", p:"/ˈɪnstəns/", m:"n. 例子，实例", e:"For <b>instance</b>, consider this scenario." },
+  { w:"institute", p:"/ˈɪnstɪtjuːt/", m:"n. 学院；v. 建立", e:"He works at a research <b>institute</b>." },
+  { w:"instrument", p:"/ˈɪnstrəmənt/", m:"n. 仪器；乐器", e:"The piano is a beautiful <b>instrument</b>." },
+  { w:"insurance", p:"/ɪnˈʃʊərəns/", m:"n. 保险", e:"Do you have health <b>insurance</b>?" },
+  { w:"integrate", p:"/ˈɪntɪɡreɪt/", m:"v. 整合，融入", e:"We need to <b>integrate</b> the new system." },
+  { w:"intellectual", p:"/ˌɪntəˈlektʃuəl/", m:"adj. 智力的；n. 知识分子", e:"She enjoys <b>intellectual</b> challenges." },
+  { w:"intense", p:"/ɪnˈtens/", m:"adj. 强烈的，激烈的", e:"The heat was <b>intense</b> in the desert." },
+  { w:"interact", p:"/ˌɪntərˈækt/", m:"v. 互动，相互作用", e:"How do these chemicals <b>interact</b>?" },
+  { w:"interpret", p:"/ɪnˈtɜːprɪt/", m:"v. 解释；口译", e:"How do you <b>interpret</b> this poem?" },
+  { w:"interval", p:"/ˈɪntəvl/", m:"n. 间隔；幕间休息", e:"There's a 15-minute <b>interval</b> between classes." },
+  { w:"invade", p:"/ɪnˈveɪd/", m:"v. 侵入，侵略", e:"The army <b>invaded</b> the neighboring country." },
+  { w:"invest", p:"/ɪnˈvest/", m:"v. 投资；投入", e:"He decided to <b>invest</b> in the stock market." },
+  { w:"investigate", p:"/ɪnˈvestɪɡeɪt/", m:"v. 调查，研究", e:"The police are <b>investigating</b> the case." },
+  { w:"involve", p:"/ɪnˈvɒlv/", m:"v. 涉及；包含", e:"The job <b>involves</b> a lot of travel." },
+  { w:"isolate", p:"/ˈaɪsəleɪt/", m:"v. 使隔离，孤立", e:"They <b>isolated</b> the virus in the lab." },
+  { w:"issue", p:"/ˈɪʃuː/", m:"n. 问题；v. 发布", e:"Climate change is a pressing <b>issue</b>." },
+  { w:"joint", p:"/dʒɔɪnt/", m:"adj. 共同的；n. 关节", e:"They made a <b>joint</b> effort to finish the project." },
+  { w:"journal", p:"/ˈdʒɜːnl/", m:"n. 期刊；日记", e:"She published her findings in a scientific <b>journal</b>." },
+  { w:"justify", p:"/ˈdʒʌstɪfaɪ/", m:"v. 证明…正当", e:"Nothing can <b>justify</b> such violence." },
+  { w:"keen", p:"/kiːn/", m:"adj. 热切的；敏锐的", e:"She's <b>keen</b> on learning Chinese." },
+  { w:"launch", p:"/lɔːntʃ/", m:"v./n. 发射；推出", e:"They plan to <b>launch</b> the new product next month." },
+  { w:"liberal", p:"/ˈlɪbərəl/", m:"adj. 自由的；开明的", e:"He has <b>liberal</b> views on education." },
+  { w:"likewise", p:"/ˈlaɪkwaɪz/", m:"adv. 同样地；也", e:"He was late, and <b>likewise</b> his sister." },
+  { w:"locate", p:"/ləʊˈkeɪt/", m:"v. 找到；位于", e:"Can you <b>locate</b> the nearest hospital?" },
+  { w:"logic", p:"/ˈlɒdʒɪk/", m:"n. 逻辑，推理", e:"His argument lacks <b>logic</b>." },
+  { w:"maintain", p:"/meɪnˈteɪn/", m:"v. 维持；保养", e:"It's hard to <b>maintain</b> a healthy diet." },
+  { w:"major", p:"/ˈmeɪdʒə(r)/", m:"adj. 主要的；n. 专业", e:"This is a <b>major</b> breakthrough." },
+  { w:"manifest", p:"/ˈmænɪfest/", m:"v. 表明；adj. 明显的", e:"The symptoms <b>manifested</b> after a week." },
+  { w:"manufacture", p:"/ˌmænjuˈfæktʃə(r)/", m:"v./n. 制造", e:"The factory <b>manufactures</b> electronic parts." },
+  { w:"mature", p:"/məˈtʃʊə(r)/", m:"adj. 成熟的；v. 成熟", e:"She's very <b>mature</b> for her age." },
+  { w:"maximum", p:"/ˈmæksɪməm/", m:"adj./n. 最大（的）", e:"The <b>maximum</b> speed is 120 km/h." },
+  { w:"mechanism", p:"/ˈmekənɪzəm/", m:"n. 机制；机械装置", e:"The body has a natural defense <b>mechanism</b>." },
+  { w:"medium", p:"/ˈmiːdiəm/", m:"n. 媒介；adj. 中等的", e:"Social <b>medium</b> has changed communication." },
+  { w:"mental", p:"/ˈmentl/", m:"adj. 精神的，心理的", e:"She needs <b>mental</b> health support." },
+  { w:"mild", p:"/maɪld/", m:"adj. 温和的；轻微的", e:"The winter this year is surprisingly <b>mild</b>." },
+  { w:"minor", p:"/ˈmaɪnə(r)/", m:"adj. 较小的；次要的", e:"It's just a <b>minor</b> problem, don't worry." },
+  { w:"modify", p:"/ˈmɒdɪfaɪ/", m:"v. 修改，调整", e:"We need to <b>modify</b> the design slightly." },
+  { w:"monitor", p:"/ˈmɒnɪtə(r)/", m:"v. 监控；n. 显示器", e:"Doctors <b>monitored</b> her condition closely." },
+  { w:"motive", p:"/ˈməʊtɪv/", m:"n. 动机，目的", e:"What was his <b>motive</b> for lying?" },
+  { w:"mutual", p:"/ˈmjuːtʃuəl/", m:"adj. 相互的；共同的", e:"They share a <b>mutual</b> respect." },
+  { w:"negative", p:"/ˈneɡətɪv/", m:"adj. 消极的；否定的", e:"Don't be so <b>negative</b> about everything." },
+  { w:"neglect", p:"/nɪˈɡlekt/", m:"v./n. 忽视，疏忽", e:"Don't <b>neglect</b> your health." },
+  { w:"negotiate", p:"/nɪˈɡəʊʃieɪt/", m:"v. 谈判，协商", e:"They are <b>negotiating</b> a peace deal." },
+  { w:"notion", p:"/ˈnəʊʃn/", m:"n. 概念，观念", e:"I reject the <b>notion</b> that money equals happiness." },
+  { w:"numerous", p:"/ˈnjuːmərəs/", m:"adj. 许多的，大量的", e:"She has received <b>numerous</b> awards." },
+  { w:"object", p:"/ˈɒbdʒɪkt/ /əbˈdʒekt/", m:"n. 物体；目标；v. 反对", e:"I <b>object</b> to the proposed changes." },
+  { w:"objective", p:"/əbˈdʒektɪv/", m:"n. 目标；adj. 客观的", e:"Our main <b>objective</b> is to increase sales." },
+  { w:"obligation", p:"/ˌɒblɪˈɡeɪʃn/", m:"n. 义务，责任", e:"You have an <b>obligation</b> to tell the truth." },
+  { w:"observe", p:"/əbˈzɜːv/", m:"v. 观察；遵守", e:"Scientists <b>observe</b> the stars at night." },
+  { w:"obstacle", p:"/ˈɒbstəkl/", m:"n. 障碍，阻碍", e:"Lack of money was the biggest <b>obstacle</b>." },
+  { w:"obtain", p:"/əbˈteɪn/", m:"v. 获得，得到", e:"Where can I <b>obtain</b> a copy of the report?" },
+  { w:"obvious", p:"/ˈɒbviəs/", m:"adj. 明显的", e:"The answer is <b>obvious</b> to everyone." },
+  { w:"occasion", p:"/əˈkeɪʒn/", m:"n. 场合；时机", e:"This is a special <b>occasion</b> for all of us." },
+  { w:"occupy", p:"/ˈɒkjupaɪ/", m:"v. 占据；使忙碌", e:"Reading <b>occupies</b> most of his free time." },
+  { w:"offend", p:"/əˈfend/", m:"v. 冒犯；违反", e:"His remarks <b>offended</b> many people." },
+  { w:"operate", p:"/ˈɒpəreɪt/", m:"v. 操作；经营；动手术", e:"Can you <b>operate</b> this machine?" },
+  { w:"opponent", p:"/əˈpəʊnənt/", m:"n. 对手，反对者", e:"He defeated his <b>opponent</b> in the election." },
+  { w:"opportunity", p:"/ˌɒpəˈtjuːnəti/", m:"n. 机会，时机", e:"Don't miss this great <b>opportunity</b>." },
+  { w:"oppose", p:"/əˈpəʊz/", m:"v. 反对，抵制", e:"Many residents <b>oppose</b> the new development." },
+  { w:"option", p:"/ˈɒpʃn/", m:"n. 选择；选项", e:"We have no other <b>option</b> but to wait." },
+  { w:"ordinary", p:"/ˈɔːdnri/", m:"adj. 普通的，平常的", e:"It was just an <b>ordinary</b> day." },
+  { w:"organize", p:"/ˈɔːɡənaɪz/", m:"v. 组织，安排", e:"She <b>organized</b> a charity event." },
+  { w:"original", p:"/əˈrɪdʒənl/", m:"adj. 原始的；独创的", e:"The <b>original</b> painting is worth millions." },
+  { w:"outcome", p:"/ˈaʊtkʌm/", m:"n. 结果，后果", e:"We're still waiting for the final <b>outcome</b>." },
+  { w:"overcome", p:"/ˌəʊvəˈkʌm/", m:"v. 克服，战胜", e:"She <b>overcame</b> her fear of heights." },
+  { w:"overlook", p:"/ˌəʊvəˈlʊk/", m:"v. 俯瞰；忽视", e:"Don't <b>overlook</b> the small details." },
+  { w:"overseas", p:"/ˌəʊvəˈsiːz/", m:"adv./adj. 在海外", e:"He studied <b>overseas</b> for three years." },
+  { w:"participate", p:"/pɑːˈtɪsɪpeɪt/", m:"v. 参加，参与", e:"Everyone is encouraged to <b>participate</b>." },
+  { w:"particular", p:"/pəˈtɪkjələ(r)/", m:"adj. 特定的；挑剔的", e:"Do you have any <b>particular</b> reason?" },
+  { w:"passion", p:"/ˈpæʃn/", m:"n. 激情，热情", e:"She has a <b>passion</b> for music." },
+  { w:"perceive", p:"/pəˈsiːv/", m:"v. 察觉；理解", e:"How do you <b>perceive</b> the situation?" },
+  { w:"perform", p:"/pəˈfɔːm/", m:"v. 表演；执行", e:"The team <b>performed</b> extremely well." },
+  { w:"permanent", p:"/ˈpɜːmənənt/", m:"adj. 永久的，持久的", e:"Are you looking for a <b>permanent</b> job?" },
+  { w:"permit", p:"/pəˈmɪt/", m:"v. 允许；n. 许可证", e:"Smoking is not <b>permitted</b> here." },
+  { w:"persist", p:"/pəˈsɪst/", m:"v. 坚持；持续", e:"If the symptoms <b>persist</b>, see a doctor." },
+  { w:"personality", p:"/ˌpɜːsəˈnæləti/", m:"n. 个性，性格", e:"She has a warm and outgoing <b>personality</b>." },
+  { w:"perspective", p:"/pəˈspektɪv/", m:"n. 视角；观点", e:"Let's look at it from a different <b>perspective</b>." },
+  { w:"phenomenon", p:"/fɪˈnɒmɪnən/", m:"n. 现象", e:"This is a rare natural <b>phenomenon</b>." },
+  { w:"policy", p:"/ˈpɒləsi/", m:"n. 政策；保险单", e:"The new <b>policy</b> takes effect next month." },
+  { w:"portion", p:"/ˈpɔːʃn/", m:"n. 部分；一份", e:"A large <b>portion</b> of the budget was cut." },
+  { w:"possess", p:"/pəˈzes/", m:"v. 拥有，具有", e:"She <b>possesses</b> remarkable talent." },
+  { w:"potential", p:"/pəˈtenʃl/", m:"adj. 潜在的；n. 潜力", e:"You have great <b>potential</b>." },
+  { w:"precious", p:"/ˈpreʃəs/", m:"adj. 珍贵的", e:"Time is the most <b>precious</b> resource." },
+  { w:"precise", p:"/prɪˈsaɪs/", m:"adj. 精确的", e:"We need <b>precise</b> measurements." },
+  { w:"predict", p:"/prɪˈdɪkt/", m:"v. 预测，预言", e:"It's hard to <b>predict</b> the future." },
+  { w:"prefer", p:"/prɪˈfɜː(r)/", m:"v. 更喜欢，偏好", e:"I <b>prefer</b> tea over coffee." },
+  { w:"preserve", p:"/prɪˈzɜːv/", m:"v. 保存；保护", e:"We must <b>preserve</b> our cultural heritage." },
+  { w:"pressure", p:"/ˈpreʃə(r)/", m:"n. 压力；v. 施压", e:"He works well under <b>pressure</b>." },
+  { w:"presumably", p:"/prɪˈzjuːməbli/", m:"adv. 大概，可能", e:"<b>Presumably</b> he's just running late." },
+  { w:"prevail", p:"/prɪˈveɪl/", m:"v. 盛行；获胜", e:"Justice will eventually <b>prevail</b>." },
+  { w:"previous", p:"/ˈpriːviəs/", m:"adj. 先前的", e:"I have <b>previous</b> experience in this field." },
+  { w:"primary", p:"/ˈpraɪməri/", m:"adj. 主要的；初级的", e:"Our <b>primary</b> goal is safety." },
+  { w:"principle", p:"/ˈprɪnsəpl/", m:"n. 原则；原理", e:"She's a woman of strong <b>principle</b>." },
+  { w:"priority", p:"/praɪˈɒrəti/", m:"n. 优先（权）", e:"Health should be our top <b>priority</b>." },
+  { w:"procedure", p:"/prəˈsiːdʒə(r)/", m:"n. 程序，步骤", e:"What's the <b>procedure</b> for applying?" },
+  { w:"proceed", p:"/prəˈsiːd/", m:"v. 继续；进行", e:"We can <b>proceed</b> with the plan now." },
+  { w:"profit", p:"/ˈprɒfɪt/", m:"n. 利润；v. 获益", e:"The company made a huge <b>profit</b> last year." },
+  { w:"prohibit", p:"/prəˈhɪbɪt/", m:"v. 禁止", e:"Smoking is <b>prohibited</b> in public places." },
+  { w:"promote", p:"/prəˈməʊt/", m:"v. 促进；晋升；推广", e:"Exercise <b>promotes</b> good health." },
+  { w:"prompt", p:"/prɒmpt/", m:"adj. 迅速的；v. 促使", e:"His question <b>prompted</b> a heated discussion." },
+  { w:"proportion", p:"/prəˈpɔːʃn/", m:"n. 比例；部分", e:"A large <b>proportion</b> of students passed." },
+  { w:"propose", p:"/prəˈpəʊz/", m:"v. 提议；求婚", e:"I <b>propose</b> we take a break." },
+  { w:"prospect", p:"/ˈprɒspekt/", m:"n. 前景；可能性", e:"The <b>prospect</b> of war is frightening." },
+  { w:"pursue", p:"/pəˈsjuː/", m:"v. 追求；追赶", e:"She decided to <b>pursue</b> a career in law." },
+  { w:"qualify", p:"/ˈkwɒlɪfaɪ/", m:"v. 使合格，取得资格", e:"Does this <b>qualify</b> me for the job?" },
+  { w:"radical", p:"/ˈrædɪkl/", m:"adj. 根本的；激进的", e:"We need <b>radical</b> changes to the system." },
+  { w:"random", p:"/ˈrændəm/", m:"adj. 随机的，任意的", e:"The winners were chosen at <b>random</b>." },
+  { w:"range", p:"/reɪndʒ/", m:"n. 范围；v. 变化", e:"Prices <b>range</b> from $10 to $100." },
+  { w:"rank", p:"/ræŋk/", m:"n. 等级；v. 排名", e:"The university is <b>ranked</b> among the best." },
+  { w:"rapid", p:"/ˈræpɪd/", m:"adj. 迅速的，快速的", e:"There has been <b>rapid</b> growth in the area." },
+  { w:"rare", p:"/reə(r)/", m:"adj. 稀有的，罕见的", e:"This species of bird is extremely <b>rare</b>." },
+  { w:"rational", p:"/ˈræʃnəl/", m:"adj. 理性的，合理的", e:"Let's make a <b>rational</b> decision." },
+  { w:"react", p:"/riˈækt/", m:"v. 反应；回应", e:"How did she <b>react</b> to the news?" },
+  { w:"reasonable", p:"/ˈriːznəbl/", m:"adj. 合理的，适度的", e:"That seems like a <b>reasonable</b> price." },
+  { w:"recognize", p:"/ˈrekəɡnaɪz/", m:"v. 认出；承认", e:"I didn't <b>recognize</b> you at first." },
+  { w:"recommend", p:"/ˌrekəˈmend/", m:"v. 推荐；建议", e:"I <b>recommend</b> this book to everyone." },
+  { w:"recover", p:"/rɪˈkʌvə(r)/", m:"v. 恢复；康复", e:"It took months to <b>recover</b> from the illness." },
+  { w:"reduce", p:"/rɪˈdjuːs/", m:"v. 减少，降低", e:"We must <b>reduce</b> our carbon footprint." },
+  { w:"refer", p:"/rɪˈfɜː(r)/", m:"v. 提及；参考", e:"What are you <b>referring</b> to?" },
+  { w:"reflect", p:"/rɪˈflekt/", m:"v. 反映；反思", e:"Take time to <b>reflect</b> on your actions." },
+  { w:"reform", p:"/rɪˈfɔːm/", m:"v./n. 改革，改进", e:"The government promised to <b>reform</b> education." },
+  { w:"regulate", p:"/ˈreɡjuleɪt/", m:"v. 调节；管理", e:"Laws <b>regulate</b> the use of pesticides." },
+  { w:"reinforce", p:"/ˌriːɪnˈfɔːs/", m:"v. 加强，强化", e:"The evidence <b>reinforced</b> his argument." },
+  { w:"reject", p:"/rɪˈdʒekt/", m:"v. 拒绝；排斥", e:"The committee <b>rejected</b> the proposal." },
+  { w:"relate", p:"/rɪˈleɪt/", m:"v. 联系；讲述", e:"Can you <b>relate</b> to her experience?" },
+  { w:"release", p:"/rɪˈliːs/", m:"v./n. 释放；发布", e:"The band will <b>release</b> a new album soon." },
+  { w:"relevant", p:"/ˈreləvənt/", m:"adj. 相关的", e:"Is this information still <b>relevant</b>?" },
+  { w:"relief", p:"/rɪˈliːf/", m:"n. 减轻；救济", e:"It was a great <b>relief</b> to hear she was safe." },
+  { w:"rely", p:"/rɪˈlaɪ/", m:"v. 依赖，依靠", e:"You can <b>rely</b> on me for support." },
+  { w:"remark", p:"/rɪˈmɑːk/", m:"n./v. 评论，注意", e:"He made a rude <b>remark</b> about her age." },
+  { w:"remedy", p:"/ˈremədi/", m:"n./v. 补救；治疗方法", e:"There is no simple <b>remedy</b> for this." },
+  { w:"remote", p:"/rɪˈməʊt/", m:"adj. 遥远的；偏僻的", e:"They live in a <b>remote</b> mountain village." },
+  { w:"render", p:"/ˈrendə(r)/", m:"v. 使成为；给予", e:"The accident <b>rendered</b> him unable to walk." },
+  { w:"replace", p:"/rɪˈpleɪs/", m:"v. 替代，更换", e:"Can anything <b>replace</b> a mother's love?" },
+  { w:"represent", p:"/ˌreprɪˈzent/", m:"v. 代表；表示", e:"She was chosen to <b>represent</b> the class." },
+  { w:"reputation", p:"/ˌrepjuˈteɪʃn/", m:"n. 名声，声誉", e:"The company has a good <b>reputation</b>." },
+  { w:"request", p:"/rɪˈkwest/", m:"v./n. 请求，要求", e:"She made a <b>request</b> for more time." },
+  { w:"require", p:"/rɪˈkwaɪə(r)/", m:"v. 需要；要求", e:"This job <b>requires</b> a lot of patience." },
+  { w:"resemble", p:"/rɪˈzembl/", m:"v. 像，类似", e:"You closely <b>resemble</b> your father." },
+  { w:"reserve", p:"/rɪˈzɜːv/", m:"v. 预订；保留；n. 储备", e:"I'd like to <b>reserve</b> a table for two." },
+  { w:"resign", p:"/rɪˈzaɪn/", m:"v. 辞职；顺从", e:"He decided to <b>resign</b> from his position." },
+  { w:"resist", p:"/rɪˈzɪst/", m:"v. 抵抗；抵制", e:"I couldn't <b>resist</b> the temptation." },
+  { w:"resolve", p:"/rɪˈzɒlv/", m:"v. 解决；决心", e:"We need to <b>resolve</b> this issue quickly." },
+  { w:"resource", p:"/rɪˈzɔːs/", m:"n. 资源；财力", e:"Natural <b>resources</b> are limited." },
+  { w:"respond", p:"/rɪˈspɒnd/", m:"v. 回答；响应", e:"Please <b>respond</b> to my email by Friday." },
+  { w:"restore", p:"/rɪˈstɔː(r)/", m:"v. 恢复；修复", e:"They plan to <b>restore</b> the old building." },
+  { w:"restrict", p:"/rɪˈstrɪkt/", m:"v. 限制，约束", e:"The new rules <b>restrict</b> access to the area." },
+  { w:"retain", p:"/rɪˈteɪn/", m:"v. 保留，保持", e:"She <b>retained</b> her sense of humor." },
+  { w:"reveal", p:"/rɪˈviːl/", m:"v. 揭示；显露", e:"He refused to <b>reveal</b> the secret." },
+  { w:"revenue", p:"/ˈrevənjuː/", m:"n. 收入；税收", e:"The company's <b>revenue</b> increased by 15%." },
+  { w:"reverse", p:"/rɪˈvɜːs/", m:"v./n./adj. 相反；倒转", e:"The situation is now in <b>reverse</b>." },
+  { w:"revolution", p:"/ˌrevəˈluːʃn/", m:"n. 革命；巨变", e:"The internet caused a <b>revolution</b> in communication." },
+  { w:"rigid", p:"/ˈrɪdʒɪd/", m:"adj. 严格的；僵硬的", e:"The rules are too <b>rigid</b>." },
+  { w:"risk", p:"/rɪsk/", m:"n./v. 风险；冒险", e:"Don't take unnecessary <b>risks</b>." },
+  { w:"rival", p:"/ˈraɪvl/", m:"n./v. 对手；竞争", e:"He defeated his longtime <b>rival</b>." },
+  { w:"routine", p:"/ruːˈtiːn/", m:"n. 常规；adj. 常规的", e:"She follows a strict daily <b>routine</b>." },
+  { w:"sacrifice", p:"/ˈsækrɪfaɪs/", m:"v./n. 牺牲；献祭", e:"He made great <b>sacrifices</b> for his children." },
+  { w:"sample", p:"/ˈsɑːmpl/", m:"n./v. 样品；取样", e:"They took a blood <b>sample</b> for testing." },
+  { w:"schedule", p:"/ˈʃedjuːl/", m:"n./v. 时间表；安排", e:"The meeting is <b>scheduled</b> for 3 pm." },
+  { w:"scheme", p:"/skiːm/", m:"n./v. 计划；阴谋", e:"They devised a clever <b>scheme</b>." },
+  { w:"secure", p:"/sɪˈkjʊə(r)/", m:"adj. 安全的；v. 获得", e:"Make sure the door is <b>secure</b>." },
+  { w:"seek", p:"/siːk/", m:"v. 寻找；寻求", e:"Many people <b>seek</b> happiness in wealth." },
+  { w:"select", p:"/sɪˈlekt/", m:"v. 选择；adj. 精选的", e:"Please <b>select</b> your preferred option." },
+  { w:"sensitive", p:"/ˈsensətɪv/", m:"adj. 敏感的；体贴的", e:"She's very <b>sensitive</b> to criticism." },
+  { w:"separate", p:"/ˈsepəreɪt/", m:"v./adj. 分开；分离的", e:"We <b>separated</b> the good apples from the bad." },
+  { w:"sequence", p:"/ˈsiːkwəns/", m:"n. 顺序，序列", e:"The events happened in a logical <b>sequence</b>." },
+  { w:"severe", p:"/sɪˈvɪə(r)/", m:"adj. 严重的；严厉的", e:"The storm caused <b>severe</b> damage." },
+  { w:"shelter", p:"/ˈʃeltə(r)/", m:"n./v. 避难所；遮蔽", e:"They sought <b>shelter</b> from the rain." },
+  { w:"shift", p:"/ʃɪft/", m:"v./n. 转移；轮班", e:"There's been a <b>shift</b> in public opinion." },
+  { w:"signal", p:"/ˈsɪɡnəl/", m:"n./v. 信号；发信号", e:"The red light is a warning <b>signal</b>." },
+  { w:"significant", p:"/sɪɡˈnɪfɪkənt/", m:"adj. 重要的；显著的", e:"This is a <b>significant</b> discovery." },
+  { w:"similar", p:"/ˈsɪmələ(r)/", m:"adj. 相似的，类似的", e:"The two cases are very <b>similar</b>." },
+  { w:"simultaneous", p:"/ˌsɪmlˈteɪniəs/", m:"adj. 同时发生的", e:"The explosions were almost <b>simultaneous</b>." },
+  { w:"slight", p:"/slaɪt/", m:"adj. 轻微的；v. 轻视", e:"There's a <b>slight</b> chance of rain." },
+  { w:"source", p:"/sɔːs/", m:"n. 来源；源头", e:"What's the <b>source</b> of this information?" },
+  { w:"specific", p:"/spəˈsɪfɪk/", m:"adj. 具体的；特定的", e:"Can you be more <b>specific</b>?" },
+  { w:"stable", p:"/ˈsteɪbl/", m:"adj. 稳定的；n. 马厩", e:"The economy is now more <b>stable</b>." },
+  { w:"status", p:"/ˈsteɪtəs/", m:"n. 地位；状况", e:"What's your current <b>status</b>?" },
+  { w:"strategy", p:"/ˈstrætədʒi/", m:"n. 策略，战略", e:"We need a new marketing <b>strategy</b>." },
+  { w:"stress", p:"/stres/", m:"n./v. 压力；强调", e:"Too much <b>stress</b> is bad for health." },
+  { w:"structure", p:"/ˈstrʌktʃə(r)/", m:"n. 结构；v. 组织", e:"The <b>structure</b> of the essay is clear." },
+  { w:"submit", p:"/səbˈmɪt/", m:"v. 提交；服从", e:"Please <b>submit</b> your application by Friday." },
+  { w:"subsequent", p:"/ˈsʌbsɪkwənt/", m:"adj. 随后的", e:"<b>Subsequent</b> events proved him wrong." },
+  { w:"substance", p:"/ˈsʌbstəns/", m:"n. 物质；实质", e:"Water is a liquid <b>substance</b>." },
+  { w:"substitute", p:"/ˈsʌbstɪtjuːt/", m:"v./n. 替代（品）", e:"There's no <b>substitute</b> for hard work." },
+  { w:"sufficient", p:"/səˈfɪʃnt/", m:"adj. 足够的，充分的", e:"Do we have <b>sufficient</b> supplies?" },
+  { w:"superior", p:"/suːˈpɪəriə(r)/", m:"adj. 优越的；上级的", e:"This model is <b>superior</b> to the old one." },
+  { w:"supplement", p:"/ˈsʌplɪment/", m:"n./v. 补充；增刊", e:"She takes vitamin <b>supplements</b> daily." },
+  { w:"surplus", p:"/ˈsɜːpləs/", m:"n./adj. 过剩（的）", e:"The country has a trade <b>surplus</b>." },
+  { w:"survey", p:"/ˈsɜːveɪ/", m:"n./v. 调查；测量", e:"A recent <b>survey</b> shows high satisfaction." },
+  { w:"survive", p:"/səˈvaɪv/", m:"v. 幸存；活下来", e:"Only three people <b>survived</b> the crash." },
+  { w:"suspect", p:"/səˈspekt/", m:"v. 怀疑；n. 嫌疑人", e:"I <b>suspect</b> he's not telling the truth." },
+  { w:"suspend", p:"/səˈspend/", m:"v. 暂停；悬挂", e:"The service was <b>suspended</b> temporarily." },
+  { w:"sustain", p:"/səˈsteɪn/", m:"v. 维持；承受", e:"The bridge can <b>sustain</b> heavy loads." },
+  { w:"symbol", p:"/ˈsɪmbl/", m:"n. 符号；象征", e:"The dove is a <b>symbol</b> of peace." },
+  { w:"tackle", p:"/ˈtækl/", m:"v. 处理；n. 用具", e:"Let's <b>tackle</b> this problem together." },
+  { w:"target", p:"/ˈtɑːɡɪt/", m:"n. 目标；v. 瞄准", e:"We need to set clear <b>targets</b>." },
+  { w:"temporary", p:"/ˈtemprəri/", m:"adj. 暂时的，临时的", e:"This is only a <b>temporary</b> solution." },
+  { w:"tend", p:"/tend/", m:"v. 倾向；照料", e:"People <b>tend</b> to believe what they want." },
+  { w:"terminal", p:"/ˈtɜːmɪnl/", m:"adj. 末期的；n. 终端", e:"We met at the airport <b>terminal</b>." },
+  { w:"thorough", p:"/ˈθʌrə/", m:"adj. 彻底的；仔细的", e:"The police conducted a <b>thorough</b> search." },
+  { w:"threat", p:"/θret/", m:"n. 威胁", e:"Pollution poses a serious <b>threat</b>." },
+  { w:"tolerate", p:"/ˈtɒləreɪt/", m:"v. 容忍，忍受", e:"I won't <b>tolerate</b> such behavior." },
+  { w:"tradition", p:"/trəˈdɪʃn/", m:"n. 传统", e:"It's a <b>tradition</b> to eat dumplings on New Year." },
+  { w:"transfer", p:"/trænsˈfɜː(r)/", m:"v./n. 转移；转让", e:"He was <b>transferred</b> to another department." },
+  { w:"transform", p:"/trænsˈfɔːm/", m:"v. 改变，转变", e:"Technology has <b>transformed</b> our lives." },
+  { w:"tremendous", p:"/trɪˈmendəs/", m:"adj. 巨大的，极大的", e:"She made a <b>tremendous</b> effort to succeed." },
+  { w:"trend", p:"/trend/", m:"n. 趋势，潮流", e:"Social media is a growing <b>trend</b>." },
+  { w:"trigger", p:"/ˈtrɪɡə(r)/", m:"v. 触发；n. 扳机", e:"Stress can <b>trigger</b> headaches." },
+  { w:"ultimate", p:"/ˈʌltɪmət/", m:"adj. 最终的；极端的", e:"His <b>ultimate</b> goal is to become a doctor." },
+  { w:"undergo", p:"/ˌʌndəˈɡəʊ/", m:"v. 经历，经受", e:"She <b>underwent</b> major surgery last year." },
+  { w:"undertake", p:"/ˌʌndəˈteɪk/", m:"v. 承担；从事", e:"He <b>undertook</b> the task willingly." },
+  { w:"unique", p:"/juˈniːk/", m:"adj. 独特的", e:"Everyone has a <b>unique</b> personality." },
+  { w:"universal", p:"/ˌjuːnɪˈvɜːsl/", m:"adj. 普遍的；全世界的", e:"Music is a <b>universal</b> language." },
+  { w:"urban", p:"/ˈɜːbən/", m:"adj. 城市的", e:"<b>Urban</b> areas are expanding rapidly." },
+  { w:"urge", p:"/ɜːdʒ/", m:"v. 催促；n. 冲动", e:"I <b>urge</b> you to reconsider your decision." },
+  { w:"utilize", p:"/ˈjuːtɪlaɪz/", m:"v. 利用，使用", e:"We should <b>utilize</b> renewable energy." },
+  { w:"valid", p:"/ˈvælɪd/", m:"adj. 有效的；合理的", e:"Your passport is no longer <b>valid</b>." },
+  { w:"vanish", p:"/ˈvænɪʃ/", m:"v. 消失，消散", e:"The magician made the rabbit <b>vanish</b>." },
+  { w:"variable", p:"/ˈveəriəbl/", m:"adj. 可变的；n. 变量", e:"The weather here is highly <b>variable</b>." },
+  { w:"variety", p:"/vəˈraɪəti/", m:"n. 多样性；种类", e:"We offer a wide <b>variety</b> of products." },
+  { w:"vehicle", p:"/ˈviːəkl/", m:"n. 车辆；工具", e:"Electric <b>vehicles</b> are becoming popular." },
+  { w:"venture", p:"/ˈventʃə(r)/", m:"n./v. 冒险；企业", e:"This is a risky business <b>venture</b>." },
+  { w:"verify", p:"/ˈverɪfaɪ/", m:"v. 核实，验证", e:"We need to <b>verify</b> the information first." },
+  { w:"version", p:"/ˈvɜːʃn/", m:"n. 版本；说法", e:"This is the latest <b>version</b> of the app." },
+  { w:"victim", p:"/ˈvɪktɪm/", m:"n. 受害者", e:"The flood <b>victims</b> need immediate help." },
+  { w:"vigorous", p:"/ˈvɪɡərəs/", m:"adj. 充满活力的", e:"He takes <b>vigorous</b> exercise every morning." },
+  { w:"violate", p:"/ˈvaɪəleɪt/", m:"v. 违反；侵犯", e:"You must not <b>violate</b> the rules." },
+  { w:"virtual", p:"/ˈvɜːtʃuəl/", m:"adj. 虚拟的；实质上的", e:"We had a <b>virtual</b> meeting online." },
+  { w:"virtue", p:"/ˈvɜːtʃuː/", m:"n. 美德；优点", e:"Patience is a <b>virtue</b>." },
+  { w:"visible", p:"/ˈvɪzəbl/", m:"adj. 可见的，明显的", e:"The stars are clearly <b>visible</b> tonight." },
+  { w:"vision", p:"/ˈvɪʒn/", m:"n. 视力；愿景", e:"She has a clear <b>vision</b> for the future." },
+  { w:"vital", p:"/ˈvaɪtl/", m:"adj. 极其重要的", e:"Exercise is <b>vital</b> for good health." },
+  { w:"volume", p:"/ˈvɒljuːm/", m:"n. 音量；体积；卷", e:"Please turn down the <b>volume</b>." },
+  { w:"voluntary", p:"/ˈvɒləntri/", m:"adj. 自愿的", e:"She does <b>voluntary</b> work at the hospital." },
+  { w:"vulnerable", p:"/ˈvʌlnərəbl/", m:"adj. 脆弱的，易受伤的", e:"Children are <b>vulnerable</b> to diseases." },
+  { w:"welfare", p:"/ˈwelfeə(r)/", m:"n. 福利；幸福", e:"The government provides social <b>welfare</b>." },
+  { w:"widespread", p:"/ˈwaɪdspred/", m:"adj. 广泛的", e:"The disease is <b>widespread</b> in the region." },
+  { w:"witness", p:"/ˈwɪtnəs/", m:"n./v. 目击者；见证", e:"I was a <b>witness</b> to the accident." },
+  { w:"worthwhile", p:"/ˌwɜːθˈwaɪl/", m:"adj. 值得的", e:"It was a <b>worthwhile</b> experience." },
+  { w:"yield", p:"/jiːld/", m:"v. 产生；屈服；n. 产量", e:"The investigation <b>yielded</b> new evidence." },
+];
+
+// ==================== 应用状态 ====================
+let currentTab = 'learn';
+let currentIndex = 0;
+let knownWords = new Set();    // 认识的
+let unknownWords = new Set();  // 不认识的
+let seenWords = new Set();     // 已见过
+let learnedCount = 0;          // 认识的次数（用于判断掌握）
+let wordQueue = [];            // 学习队列（随机顺序）
+let isFlipped = false;
+let isSpeaking = false;
+
+// ==================== 初始化 ====================
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function initLearn() {
+  wordQueue = shuffle([...Array(VOCAB.length).keys()]);
+  currentIndex = 0;
+  isFlipped = false;
+  updateCard();
+  updateStats();
+}
+
+function updateCard() {
+  if (wordQueue.length === 0) {
+    // 全部学完，重新洗牌不认识的和没见过的
+    const remaining = [];
+    for (let i = 0; i < VOCAB.length; i++) {
+      if (!knownWords.has(i)) remaining.push(i);
+    }
+    if (remaining.length === 0) {
+      document.getElementById('word-el').textContent = '🎉';
+      document.getElementById('phonetic-el').textContent = '';
+      document.getElementById('pos-el').textContent = '';
+      document.getElementById('meaning-el').textContent = '全部掌握！';
+      document.getElementById('example-el').innerHTML = '你已学完所有单词，太棒了！';
+      document.getElementById('card').classList.remove('flipped');
+      isFlipped = false;
+      document.getElementById('stat-progress').textContent = `${VOCAB.length}/${VOCAB.length}`;
+      document.getElementById('progress-fill').style.width = '100%';
+      document.getElementById('stat-mastery').textContent = '100%';
+      return;
+    }
+    wordQueue = shuffle(remaining);
+    currentIndex = 0;
+  }
+  if (currentIndex >= wordQueue.length) currentIndex = 0;
+
+  const wordIdx = wordQueue[currentIndex];
+  const v = VOCAB[wordIdx];
+
+  document.getElementById('word-el').textContent = v.w;
+  document.getElementById('phonetic-el').textContent = v.p;
+  document.getElementById('meaning-el').textContent = v.m;
+  document.getElementById('word-el-back').textContent = v.w;
+  document.getElementById('example-el').innerHTML = v.e;
+
+  // 词性标签
+  const meaning = v.m;
+  let pos = '';
+  if (meaning.startsWith('v.')) pos = 'verb';
+  else if (meaning.startsWith('n.')) pos = 'noun';
+  else if (meaning.startsWith('adj.')) pos = 'adjective';
+  else if (meaning.startsWith('adv.')) pos = 'adverb';
+  else if (meaning.startsWith('prep.')) pos = 'preposition';
+  else if (meaning.startsWith('conj.')) pos = 'conjunction';
+  else pos = 'word';
+  document.getElementById('pos-el').textContent = pos;
+
+  document.getElementById('card').classList.remove('flipped');
+  isFlipped = false;
+  updateStats();
+
+  // 自动发音
+  setTimeout(() => speakWord(), 300);
+}
+
+function updateStats() {
+  const total = VOCAB.length;
+  const known = knownWords.size;
+  const seen = seenWords.size;
+  document.getElementById('stat-progress').textContent = `${seen}/${total}`;
+  document.getElementById('progress-fill').style.width = `${(known / total * 100)}%`;
+  document.getElementById('stat-mastery').textContent = `${Math.round(known / total * 100)}%`;
+
+  // 复习tab
+  document.getElementById('review-count').textContent = `待复习：${unknownWords.size} 个单词`;
+  renderReviewList();
+}
+
+// ==================== 正宗美式发音引擎 ====================
+let americanVoice = null;
+
+function loadAmericanVoice() {
+  const voices = window.speechSynthesis.getVoices();
+  if (voices.length === 0) return null;
+
+  // 美式英语优选列表（按质量排序）
+  const prefer = [
+    'Google US English',
+    'Samantha',
+    'Alex',
+    'Microsoft David',
+    'Microsoft Zira',
+    'Karen',
+    'Moira',
+    'Tessa',
+    'Daniel',
+    'Fiona',
+  ];
+
+  // 先按优选列表匹配
+  for (const name of prefer) {
+    const found = voices.find(v => v.name === name && v.lang.startsWith('en-US'));
+    if (found) return found;
+  }
+
+  // 再选任意 en-US 的高质量 voice（priority 通常是 'Default' 最高）
+  const usVoices = voices
+    .filter(v => v.lang.startsWith('en-US'))
+    .sort((a, b) => {
+      // 优先不带 localService 的（通常是系统内置高质量）
+      if (a.localService && !b.localService) return 1;
+      if (!a.localService && b.localService) return -1;
+      return 0;
+    });
+
+  return usVoices[0] || null;
+}
+
+function ensureAmericanVoice() {
+  if (americanVoice) return americanVoice;
+  americanVoice = loadAmericanVoice();
+  return americanVoice;
+}
+
+// voices 是异步加载的，监听变化
+window.speechSynthesis.onvoiceschanged = () => {
+  americanVoice = loadAmericanVoice();
+};
+
+// 初始加载（部分浏览器同步返回）
+americanVoice = loadAmericanVoice();
+
+function speakWord() {
+  if (wordQueue.length === 0) return;
+  if (isSpeaking) {
+    window.speechSynthesis.cancel();
+  }
+  const wordIdx = wordQueue[currentIndex];
+  const word = VOCAB[wordIdx].w;
+
+  const utterance = new SpeechSynthesisUtterance(word);
+  const voice = ensureAmericanVoice();
+  if (voice) utterance.voice = voice;
+  utterance.lang = 'en-US';
+  utterance.rate = 0.9;
+  utterance.pitch = 1;
+  utterance.volume = 1;
+
+  const btn = document.getElementById('audio-btn');
+  btn.classList.add('playing');
+  isSpeaking = true;
+
+  utterance.onend = () => {
+    btn.classList.remove('playing');
+    isSpeaking = false;
+  };
+  utterance.onerror = () => {
+    btn.classList.remove('playing');
+    isSpeaking = false;
+  };
+
+  window.speechSynthesis.speak(utterance);
+}
+
+// ==================== 卡片翻转 ====================
+function flipCard() {
+  const card = document.getElementById('card');
+  isFlipped = !isFlipped;
+  if (isFlipped) {
+    card.classList.add('flipped');
+    // 翻转后再读一次
+    setTimeout(() => speakWord(), 400);
+  } else {
+    card.classList.remove('flipped');
+  }
+}
+
+document.getElementById('card').addEventListener('click', (e) => {
+  if (e.target.closest('.audio-btn')) return; // 不拦截发音按钮
+  flipCard();
+});
+
+// ==================== 认识 / 不认识 ====================
+function markKnown() {
+  if (wordQueue.length === 0) return;
+  const wordIdx = wordQueue[currentIndex];
+  knownWords.add(wordIdx);
+  unknownWords.delete(wordIdx);
+  seenWords.add(wordIdx);
+  nextWord();
+}
+
+function markUnknown() {
+  if (wordQueue.length === 0) return;
+  const wordIdx = wordQueue[currentIndex];
+  unknownWords.add(wordIdx);
+  knownWords.delete(wordIdx);
+  seenWords.add(wordIdx);
+  nextWord();
+}
+
+function nextWord() {
+  currentIndex++;
+  if (currentIndex >= wordQueue.length) {
+    // 重新洗牌，优先不认识 + 未见过
+    const remaining = [];
+    for (let i = 0; i < VOCAB.length; i++) {
+      if (!knownWords.has(i)) remaining.push(i);
+    }
+    if (remaining.length === 0) {
+      wordQueue = [];
+      updateCard();
+      return;
+    }
+    wordQueue = shuffle(remaining);
+    currentIndex = 0;
+  }
+  updateCard();
+}
+
+// ==================== 复习列表 ====================
+function renderReviewList() {
+  const list = document.getElementById('review-list');
+  if (unknownWords.size === 0) {
+    list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:40px;">暂无待复习单词</div>';
+    return;
+  }
+  list.innerHTML = [...unknownWords].map(idx => {
+    const v = VOCAB[idx];
+    return `<div class="review-item" onclick="reviewWord(${idx})">
+      <button class="mini-audio" onclick="event.stopPropagation();speakReviewWord(${idx})">🔊</button>
+      <span class="rw">${v.w}</span>
+      <span class="rm">${v.m}</span>
+    </div>`;
+  }).join('');
+}
+
+function speakReviewWord(idx) {
+  const word = VOCAB[idx].w;
+  const utterance = new SpeechSynthesisUtterance(word);
+  const voice = ensureAmericanVoice();
+  if (voice) utterance.voice = voice;
+  utterance.lang = 'en-US';
+  utterance.rate = 0.9;
+  utterance.volume = 1;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utterance);
+}
+
+function reviewWord(idx) {
+  // 切到学习tab并定位到该单词
+  switchTab('learn');
+  wordQueue = [idx];
+  currentIndex = 0;
+  updateCard();
+}
+
+// ==================== Tab切换 ====================
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById('tab-learn').classList.toggle('active', tab === 'learn');
+  document.getElementById('tab-review').classList.toggle('active', tab === 'review');
+  document.getElementById('tab-list').classList.toggle('active', tab === 'list');
+  document.getElementById('view-learn').style.display = tab === 'learn' ? 'block' : 'none';
+  document.getElementById('view-review').style.display = tab === 'review' ? 'block' : 'none';
+  document.getElementById('view-list').style.display = tab === 'list' ? 'block' : 'none';
+  if (tab === 'review') updateStats();
+  if (tab === 'list') renderWordList();
+}
+
+// ==================== 单词表 ====================
+function renderWordList() {
+  const tbody = document.getElementById('word-table-body');
+  const query = (document.getElementById('search-input').value || '').toLowerCase().trim();
+  let words = VOCAB;
+  if (query) {
+    words = VOCAB.filter(v =>
+      v.w.toLowerCase().includes(query) ||
+      v.m.toLowerCase().includes(query)
+    );
+  }
+  tbody.innerHTML = words.map((v, i) => {
+    const origIdx = VOCAB.indexOf(v);
+    return `<tr onclick="openWordFromList(${origIdx})">
+      <td class="col-audio">
+        <button class="table-mini-audio" onclick="event.stopPropagation();speakWordFromList(${origIdx})">🔊</button>
+      </td>
+      <td class="col-word">${v.w}</td>
+      <td class="col-phonetic">${v.p}</td>
+      <td class="col-meaning">${v.m}</td>
+    </tr>`;
+  }).join('');
+}
+
+function speakWordFromList(idx) {
+  const word = VOCAB[idx].w;
+  const utterance = new SpeechSynthesisUtterance(word);
+  const voice = ensureAmericanVoice();
+  if (voice) utterance.voice = voice;
+  utterance.lang = 'en-US';
+  utterance.rate = 0.9;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utterance);
+}
+
+function openWordFromList(idx) {
+  switchTab('learn');
+  wordQueue = [idx];
+  currentIndex = 0;
+  updateCard();
+}
+
+// ==================== 键盘快捷键 ====================
+window.addEventListener('keydown', e => {
+  if (currentTab !== 'learn') return;
+
+  if (e.code === 'ArrowLeft') {
+    e.preventDefault();
+    markUnknown();
+  } else if (e.code === 'ArrowRight') {
+    e.preventDefault();
+    markKnown();
+  } else if (e.code === 'Space') {
+    e.preventDefault();
+    if (isFlipped) {
+      flipCard();
+    } else {
+      speakWord();
+    }
+  } else if (e.code === 'ArrowUp' || e.code === 'ArrowDown') {
+    e.preventDefault();
+    flipCard();
+  }
+});
+
+// ==================== 启动 ====================
+// 注册 Service Worker（PWA 离线支持）
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').then(() => {
+    console.log('✅ SW registered — offline ready');
+  }).catch(err => {
+    console.warn('SW registration failed:', err);
+  });
+}
+
+// 监听 beforeinstallprompt（Chrome 自动提示安装）
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+});
+
+initLearn();
+</script>
+</body>
+</html>
